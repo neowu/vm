@@ -9,13 +9,13 @@ public class ProgressObserver: NSObject {
     progressToObserve = progress
   }
 
-  func log(_ renderer: Logger) {
-    renderer.appendNewLine(ProgressObserver.lineToRender(progressToObserve))
+  func log() {
+    print(ProgressObserver.lineToRender(progressToObserve))
     observation = observe(\.progressToObserve.fractionCompleted) { progress, _ in
       let currentTime = Date.now
       if self.progressToObserve.isFinished || currentTime.timeIntervalSince(self.lastTimeUpdated) >= 1.0 {
         self.lastTimeUpdated = currentTime
-        renderer.updateLastLine(ProgressObserver.lineToRender(self.progressToObserve))
+        print(ProgressObserver.lineToRender(self.progressToObserve))
       }
     }
   }

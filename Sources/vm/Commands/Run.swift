@@ -140,22 +140,17 @@ struct Run: AsyncParsableCommand {
     // now VM state will return "running" so we can unlock
     try storageLock.unlock()
 
-    vm!.runTask = Task {
-      do {
-        try await vm!.start(recovery: recovery)
-        try await vm!.run()
-        print("run task ended")
-        Foundation.exit(0)
-      } catch {    
-        fputs("\(error)\n", stderr)
-        Foundation.exit(1)
-      }
+    let task = Task {        
+      vm!.start(recovery: recovery)
     }
 
-    // "tart stop" support
-    let sigintSrc = DispatchSource.makeSignalSource(signal: SIGINT)
+    // handle ctrl+c or stop
+    let sigintSrc = DispatchSource.makeSignalSource(signal: SIGINT)    
     sigintSrc.setEventHandler {
-      vm!.runTask!.cancel()
+      task.cancel()
+      Task {
+        try vm!.stop()     
+      }
     }
     sigintSrc.activate()  
 
@@ -328,7 +323,7 @@ struct Run: AsyncParsableCommand {
           CommandGroup(replacing: .undoRedo, addition: {})
           CommandGroup(replacing: .windowSize, addition: {})
           // Replace some standard menu options
-          CommandGroup(replacing: .appInfo) { AboutTart(config: vm!.config) }
+          CommandGroup(replacing: .appInfo) { About(config: vm!.config) }
           CommandMenu("Control") {
             Button("Start") {
               Task { try await vm!.virtualMachine.start() }
@@ -364,7 +359,7 @@ class MinimalMenuAppDelegate: NSObject, NSApplicationDelegate, ObservableObject 
   }
 }
 
-struct AboutTart: View {
+struct About: View {
   var credits: NSAttributedString
 
   init(config: VMConfig) {
@@ -376,16 +371,12 @@ struct AboutTart: View {
     ]
     mutableAttrStr.append(NSAttributedString(string: "CPU: \(config.cpuCount) cores\n", attributes: attrCenter))
     mutableAttrStr.append(NSAttributedString(string: "Memory: \(config.memorySize / 1024 / 1024) MB\n", attributes: attrCenter))
-    mutableAttrStr.append(NSAttributedString(string: "Display: \(config.display.description)\n", attributes: attrCenter))
-    mutableAttrStr.append(NSAttributedString(string: "https://github.com/cirruslabs/tart", attributes: [
-      .paragraphStyle: style,
-      .link : "https://github.com/cirruslabs/tart"
-    ]))
+    mutableAttrStr.append(NSAttributedString(string: "Display: \(config.display.description)\n", attributes: attrCenter))    
     credits = mutableAttrStr
   }
 
   var body: some View {
-    Button("About Tart") {
+    Button("About") {
       NSApplication.shared.orderFrontStandardAboutPanel(options: [
         NSApplication.AboutPanelOptionKey.applicationIcon: NSApplication.shared.applicationIconImage as Any,
         NSApplication.AboutPanelOptionKey.applicationName: "vm",
@@ -408,11 +399,8 @@ struct VMView: NSViewRepresentable {
     machineView.capturesSystemKeys = capturesSystemKeys
 
     // Enable automatic display reconfiguration
-    // for guests that support it
-    if #available(macOS 14.0, *) {
-      machineView.automaticallyReconfiguresDisplay = true
-    }
-
+    machineView.automaticallyReconfiguresDisplay = true
+    
     return machineView
   }
 
@@ -431,97 +419,22 @@ struct DirectoryShare {
     readOnly = parseFrom.hasSuffix(readOnlySuffix)
     let maybeNameAndURL = readOnly ? String(parseFrom.dropLast(readOnlySuffix.count)) : parseFrom
 
-    if maybeNameAndURL.starts(with: "https://") || maybeNameAndURL.starts(with: "http://") {
-      // just a URL
-      name = nil
-      path = URL(string: maybeNameAndURL)!
-      return
-    }
-
     let splits = maybeNameAndURL.split(separator: ":", maxSplits: 1)
 
     if splits.count == 2 {
       name = String(splits[0])
-      path = String(splits[1]).toRemoteOrLocalURL()
+      path = URL(fileURLWithPath: NSString(string: String(splits[1])).expandingTildeInPath)
     } else {
       name = nil
-      path = String(splits[0]).toRemoteOrLocalURL()
+      path = URL(fileURLWithPath: NSString(string: String(splits[0])).expandingTildeInPath)
     }
   }
 
   func createConfiguration() throws -> VZSharedDirectory {
-    if (path.isFileURL) {
-      return VZSharedDirectory(url: path, readOnly: readOnly)
+    if !path.isFileURL {
+      throw ValidationError("path must be file, path=\(path)")
     }
-
-    let urlCache = URLCache(memoryCapacity: 0, diskCapacity: 1 * 1024 * 1024 * 1024)
-
-    let archiveRequest = URLRequest(url: path, cachePolicy: .returnCacheDataElseLoad)
-    var response: CachedURLResponse? = urlCache.cachedResponse(for: archiveRequest)
-    if (response == nil) {
-      print("Downloading \(path)...")
-      // download and unarchive remote directories if needed here
-      // use old school API to prevent deadlocks since we are running via MainActor
-      let downloadSemaphore = DispatchSemaphore(value: 0)
-      Task {
-        do {
-          let (archiveData, archiveResponse) = try await URLSession.shared.data(for: archiveRequest)
-          urlCache.storeCachedResponse(CachedURLResponse(response: archiveResponse, data: archiveData, storagePolicy: .allowed), for: archiveRequest)
-          print("Cached for future invocations!")
-        } catch {
-          print("Download failed: \(error)")
-        }
-        downloadSemaphore.signal()
-      }
-      downloadSemaphore.wait()
-      response = urlCache.cachedResponse(for: archiveRequest)
-    } else {
-      print("Using cached archive for \(path)...")
-    }
-
-    if (response == nil) {
-      throw ValidationError("Failed to fetch a remote archive!")
-    }
-
-    let temporaryLocation = try Config().tartTmpDir.appendingPathComponent(UUID().uuidString + ".volume")
-    try FileManager.default.createDirectory(atPath: temporaryLocation.path, withIntermediateDirectories: true)
-    let lock = try FileLock(lockURL: temporaryLocation)
-    try lock.lock()
-
-    guard let executableURL = resolveBinaryPath("tar") else {
-      throw ValidationError("tar not found in PATH")
-    }
-
-    let process = Process.init()
-    process.executableURL = executableURL
-    process.currentDirectoryURL = temporaryLocation
-    process.arguments = ["-xz"]
-
-    let inPipe = Pipe()
-    process.standardInput = inPipe
-    process.launch()
-
-    inPipe.fileHandleForWriting.write(response!.data)
-    try inPipe.fileHandleForWriting.close()
-    process.waitUntilExit()
-
-    if !(process.terminationReason == .exit && process.terminationStatus == 0) {
-      throw ValidationError("Unarchiving failed!")
-    }
-
-    print("Unarchived into a temporary directory!")
-
-    return VZSharedDirectory(url: temporaryLocation, readOnly: readOnly)
-  }
-}
-
-extension String {
-  func toRemoteOrLocalURL() -> URL {
-    if (starts(with: "https://") || starts(with: "https://")) {
-      URL(string: self)!
-    } else {
-      URL(fileURLWithPath: NSString(string: self).expandingTildeInPath)
-    }
+    return VZSharedDirectory(url: path, readOnly: readOnly)    
   }
 }
 

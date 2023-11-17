@@ -34,8 +34,6 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
   // VM's config
   var config: VMConfig
 
-  var runTask: Task<Void, Error>?
-
   init(vmDir: VMDirectory,
        additionalStorageDevices: [VZStorageDeviceConfiguration] = [],
        directorySharingDevices: [VZDirectorySharingDeviceConfiguration] = [],
@@ -107,12 +105,12 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     try config.save(toURL: vmDir.configURL)
 
     // Initialize the virtual machine and its configuration
-    configuration = try Self.craftConfiguration(diskURL: vmDir.diskURL, nvramURL: vmDir.nvramURL,
+    configuration = try Self.craftConfiguration(diskURL: vmDir.diskURL, 
+                                                nvramURL: vmDir.nvramURL,
                                                 vmConfig: config,
                                                 additionalStorageDevices: additionalStorageDevices,
                                                 directorySharingDevices: directorySharingDevices,
-                                                serialPorts: serialPorts
-    )
+                                                serialPorts: serialPorts)
     virtualMachine = VZVirtualMachine(configuration: configuration)
 
     super.init()
@@ -123,8 +121,8 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
       DispatchQueue.main.async { [ipswURL] in
         let installer = VZMacOSInstaller(virtualMachine: self.virtualMachine, restoringFromImageAt: ipswURL)
 
-        defaultLogger.appendNewLine("Installing OS...")
-        ProgressObserver(installer.progress).log(defaultLogger)
+        print("Installing OS...")
+        ProgressObserver(installer.progress).log()
 
         installer.install { result in
           continuation.resume(with: result)
@@ -148,17 +146,19 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     return try VM(vmDir: vmDir)
   }
 
-  func run() async throws {
-    if Task.isCancelled {
-      try await stop()
-    }
-  }
-
   @MainActor
-  func start(recovery: Bool) async throws {
+  func start(recovery: Bool) {
+    print("starting vm") 
     let startOptions = VZMacOSVirtualMachineStartOptions()
     startOptions.startUpFromMacOSRecovery = recovery
-    try await virtualMachine.start(options: startOptions)
+    virtualMachine.start(options: startOptions) { (error) in
+      if error != nil {
+        print("Failed to start the virtual machine. \(error!)")
+        exit(EXIT_FAILURE)
+      } else {
+        print("vm started") 
+      }
+    }
   }
 
   @MainActor
@@ -167,19 +167,25 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
   }
 
   @MainActor
-  private func stop() async throws {
-    if self.virtualMachine.canRequestStop {
+  func stop() throws {  
+    print("start stop")
+    if virtualMachine.canRequestStop {
       print("request VM to stop")
-      try self.virtualMachine.requestStop()
-    }
-    // print("await VM to stop")
-    // try await self.virtualMachine.stop()
-    // print("VM stopped")
-    print("sleep 10s")
-    do {
-      sleep(10)
-    }
-    print("end sleep")
+      try virtualMachine.requestStop()
+    } 
+    DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
+      Task.detached {        
+        print("force stop VM")
+        self.virtualMachine.stop() { (error) in
+          if error != nil {
+            print("Failed to stop the virtual machine. \(error!)")
+            exit(EXIT_FAILURE)
+          } else {
+            print("vm stopped") 
+          }
+        }        
+      }      
+    }    
   }
 
   static func craftConfiguration(
@@ -263,16 +269,16 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
 
   func guestDidStop(_ virtualMachine: VZVirtualMachine) {
     print("guest has stopped the virtual machine")
-    runTask!.cancel()
+    Foundation.exit(0)
   }
 
   func virtualMachine(_ virtualMachine: VZVirtualMachine, didStopWithError error: Error) {
     print("guest has stopped the virtual machine due to error: \(error)")
-    runTask!.cancel()
+    Foundation.exit(1)
   }
 
   func virtualMachine(_ virtualMachine: VZVirtualMachine, networkDevice: VZNetworkDevice, attachmentWasDisconnectedWithError error: Error) {
     print("virtual machine's network attachment \(networkDevice) has been disconnected with error: \(error)")
-    runTask!.cancel()
+    Foundation.exit(1)
   }
 }
