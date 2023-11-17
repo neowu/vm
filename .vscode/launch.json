@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:vm}",
+            "name": "Debug vm",
+            "program": "${workspaceFolder:vm}/.build/debug/vm",
+            "preLaunchTask": "swift: Build Debug vm"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:vm}",
+            "name": "Release vm",
+            "program": "${workspaceFolder:vm}/.build/release/vm",
+            "preLaunchTask": "swift: Build Release vm"
+        }
+    ]
+}
