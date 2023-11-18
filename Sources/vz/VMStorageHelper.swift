@@ -51,10 +51,7 @@ enum RuntimeError : Error {
   case FailedToParseRemoteName(_ message: String)
   case VMTerminationFailed(_ message: String)
   case InvalidCredentials(_ message: String)
-  case VMDirectoryAlreadyInitialized(_ message: String)
-  case ExportFailed(_ message: String)
-  case ImportFailed(_ message: String)
-  case SuspendFailed(_ message: String)
+  case VMDirectoryAlreadyInitialized(_ message: String)  
 }
 
 protocol HasExitCode {
@@ -88,13 +85,7 @@ extension RuntimeError : CustomStringConvertible {
       return message
     case .VMDirectoryAlreadyInitialized(let message):
       return message
-    case .ExportFailed(let message):
-      return "VM export failed: \(message)"
-    case .ImportFailed(let message):
-      return "VM import failed: \(message)"
-    case .SuspendFailed(let message):
-      return "Failed to suspend the VM: \(message)"
-    }
+    }    
   }
 }
 

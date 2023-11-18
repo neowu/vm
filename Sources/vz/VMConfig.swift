@@ -47,16 +47,8 @@ struct VMConfig: Codable {
     self.memorySize = memorySize
   }
 
-  init(fromJSON: Data) throws {
-    self = try Config.jsonDecoder().decode(Self.self, from: fromJSON)
-  }
-
   init(fromURL: URL) throws {
-    self = try Self(fromJSON: try Data(contentsOf: fromURL))
-  }
-
-  func toJSON() throws -> Data {
-    try Config.jsonEncoder().encode(self)
+    self = try Config.jsonDecoder().decode(Self.self, from: try Data(contentsOf: fromURL))
   }
 
   func save(toURL: URL) throws {
