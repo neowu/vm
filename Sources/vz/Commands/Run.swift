@@ -16,17 +16,6 @@ struct Run: AsyncParsableCommand {
   @Argument(help: "VM name")
   var name: String
 
-  @Flag(help: ArgumentHelp(
-    "Open serial console in /dev/ttySXX",
-    discussion: "Useful for debugging Linux Kernel."))
-  var serial: Bool = false
-
-  @Option(help: ArgumentHelp(
-    "Attach an externally created serial console",
-    discussion: "Alternative to `--serial` flag for programmatic integrations."
-  ))
-  var serialPath: String?
-
   @Flag(help: "open a UI window.")
   var gui: Bool = false
 
@@ -95,29 +84,10 @@ struct Run: AsyncParsableCommand {
 
     let additionalDiskAttachments = try additionalDiskAttachments()
 
-    var serialPorts: [VZSerialPortConfiguration] = []
-    if serial {
-      let tty_fd = createPTY()
-      if (tty_fd < 0) {
-        throw RuntimeError.VMConfigurationError("Failed to create PTY")
-      }
-      let tty_read = FileHandle.init(fileDescriptor: tty_fd)
-      let tty_write = FileHandle.init(fileDescriptor: tty_fd)
-      serialPorts.append(createSerialPortConfiguration(tty_read, tty_write))
-    } else if serialPath != nil {
-      let tty_read = FileHandle.init(forReadingAtPath: serialPath!)
-      let tty_write = FileHandle.init(forWritingAtPath: serialPath!)
-      if (tty_read == nil || tty_write == nil) {
-        throw RuntimeError.VMConfigurationError("Failed to open PTY")
-      }
-      serialPorts.append(createSerialPortConfiguration(tty_read!, tty_write!))
-    }
-
     vm = try VM(
       vmDir: vmDir,      
       additionalStorageDevices: additionalDiskAttachments,
-      directorySharingDevices: directoryShares() + rosettaDirectoryShare(),
-      serialPorts: serialPorts      
+      directorySharingDevices: directoryShares() + rosettaDirectoryShare()   
     )
 
     // Lock the VM
@@ -200,7 +170,7 @@ struct Run: AsyncParsableCommand {
           if ProcessInfo.processInfo.userName != "root" {
             throw RuntimeError.VMConfigurationError("need to run as root to work with block devices")
           }
-          throw RuntimeError.VMConfigurationError("block device \(diskURL.url.path) seems to be already in use, unmount it first via 'diskutil unmount'")
+          throw RuntimeError.VMConfigurationError("block device \(diskURL.path) seems to be already in use, unmount it first via 'diskutil unmount'")
         }
         let attachment = try VZDiskBlockDeviceStorageDeviceAttachment(fileHandle: fileHandle!, readOnly: diskReadOnly, synchronizationMode: .full)
         result.append(VZVirtioBlockDeviceConfiguration(attachment: attachment))
@@ -208,7 +178,7 @@ struct Run: AsyncParsableCommand {
         // Error out if the disk is locked by the host (e.g. it was mounted in Finder),
         // see https://github.com/cirruslabs/tart/issues/323 for more details.
         if try !diskReadOnly && !FileLock(lockURL: diskURL).trylock() {
-          throw RuntimeError.DiskAlreadyInUse("disk \(diskURL.url.path) seems to be already in use, unmount it first in Finder")
+          throw RuntimeError.DiskAlreadyInUse("disk \(diskURL.path) seems to be already in use, unmount it first in Finder")
         }
 
         let diskImageAttachment = try VZDiskImageStorageDeviceAttachment(

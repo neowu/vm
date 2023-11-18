@@ -2,7 +2,7 @@ import Foundation
 import Virtualization
 import CryptoKit
 
-struct VMDirectory: Prunable {
+struct VMDirectory {
   var baseURL: URL
 
   var configURL: URL {
@@ -138,10 +138,6 @@ struct VMDirectory: Prunable {
 
   func delete() throws {
     try FileManager.default.removeItem(at: baseURL)
-  }
-
-  func accessDate() throws -> Date {
-    try baseURL.accessDate()
   }
 
   func sizeBytes() throws -> Int {

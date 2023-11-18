@@ -14,8 +14,6 @@ struct Main: AsyncParsableCommand {
       Set.self,
       Get.self,
       List.self,
-      Import.self,
-      Export.self,
       Rename.self,
       Stop.self,
       Delete.self,

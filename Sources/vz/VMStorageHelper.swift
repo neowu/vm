@@ -46,8 +46,7 @@ enum RuntimeError : Error {
   case VMNotRunning(_ message: String)
   case VMAlreadyRunning(_ message: String)
   case NoIPAddressFound(_ message: String)
-  case DiskAlreadyInUse(_ message: String)
-  case FailedToUpdateAccessDate(_ message: String)
+  case DiskAlreadyInUse(_ message: String)  
   case PIDLockFailed(_ message: String)
   case FailedToParseRemoteName(_ message: String)
   case VMTerminationFailed(_ message: String)
@@ -78,8 +77,6 @@ extension RuntimeError : CustomStringConvertible {
     case .NoIPAddressFound(let message):
       return message
     case .DiskAlreadyInUse(let message):
-      return message
-    case .FailedToUpdateAccessDate(let message):
       return message
     case .PIDLockFailed(let message):
       return message

@@ -1,6 +1,6 @@
 import Foundation
 
-class VMStorageLocal: PrunableStorage {
+class VMStorageLocal {
   let baseURL: URL = try! Config().tartHomeDir.appendingPathComponent("vms", isDirectory: true)
 
   private func vmURL(_ name: String) -> URL {
@@ -15,8 +15,6 @@ class VMStorageLocal: PrunableStorage {
     let vmDir = VMDirectory(baseURL: vmURL(name))
 
     try vmDir.validate(userFriendlyName: name)
-
-    try vmDir.baseURL.updateAccessDate()
 
     return vmDir
   }
@@ -63,10 +61,6 @@ class VMStorageLocal: PrunableStorage {
 
       throw error
     }
-  }
-
-  func prunables() throws -> [Prunable] {
-    try list().map { (_, vmDir) in vmDir }
   }
 
   func hasVMsWithMACAddress(macAddress: String) throws -> Bool {
