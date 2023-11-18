@@ -27,6 +27,8 @@ struct Set: AsyncParsableCommand {
       try vmConfig.setCPU(cpuCount: Int(cpu))
     }
 
+    // TODO: check min cpu and min ram ?
+
     if let memory = memory {
       try vmConfig.setMemory(memorySize: memory * 1024 * 1024)
     }

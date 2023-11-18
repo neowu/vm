@@ -67,6 +67,7 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     }
   }
 
+  // TODO: for mac only, move to Create
   init(
     vmDir: VMDirectory,
     ipswURL: URL,
@@ -97,11 +98,9 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     // Create config
     config = VMConfig(
       platform: Darwin(ecid: VZMacMachineIdentifier(), hardwareModel: requirements.hardwareModel),
-      cpuCountMin: requirements.minimumSupportedCPUCount,
-      memorySizeMin: requirements.minimumSupportedMemorySize
-    )
-    // allocate at least 4 CPUs because otherwise VMs are frequently freezing
-    try config.setCPU(cpuCount: max(4, requirements.minimumSupportedCPUCount))
+      cpuCount: 4,
+      memorySize: 4096 * 1024 * 1024
+    )    
     try config.save(toURL: vmDir.configURL)
 
     // Initialize the virtual machine and its configuration
@@ -131,7 +130,6 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     }
   }
 
-  @available(macOS 13, *)
   static func linux(vmDir: VMDirectory, diskSizeGB: UInt16) async throws -> VM {
     // Create NVRAM
     _ = try VZEFIVariableStore(creatingVariableStoreAt: vmDir.nvramURL)
@@ -140,7 +138,7 @@ class VM: NSObject, VZVirtualMachineDelegate, ObservableObject {
     try vmDir.resizeDisk(diskSizeGB)
 
     // Create config
-    let config = VMConfig(platform: Linux(), cpuCountMin: 4, memorySizeMin: 4096 * 1024 * 1024)
+    let config = VMConfig(platform: Linux(), cpuCount: 4, memorySize: 4096 * 1024 * 1024)
     try config.save(toURL: vmDir.configURL)
 
     return try VM(vmDir: vmDir)

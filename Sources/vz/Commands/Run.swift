@@ -7,9 +7,6 @@ import Virtualization
 
 var vm: VM?
 
-struct IPNotFound: Error {
-}
-
 struct Run: AsyncParsableCommand {
   static var configuration = CommandConfiguration(abstract: "Run a VM")
 
@@ -66,7 +63,7 @@ struct Run: AsyncParsableCommand {
   var dir: [String] = []
 
   @Flag(help: ArgumentHelp("Whether system hot keys should be sent to the guest instead of the host",
-                           discussion: "If enabled then system hot keys like Cmd+Tab will be sent to the guest instead of the host."))
+    discussion: "If enabled then system hot keys like Cmd+Tab will be sent to the guest instead of the host."))
   var captureSystemKeys: Bool = false
 
   mutating func validate() throws {
@@ -245,7 +242,6 @@ struct Run: AsyncParsableCommand {
     try VZVirtioFileSystemDeviceConfiguration.validateTag(rosettaTag)
     let device = VZVirtioFileSystemDeviceConfiguration(tag: rosettaTag)
     device.share = try VZLinuxRosettaDirectoryShare()
-
     return [device]
   }
 
@@ -258,8 +254,6 @@ struct Run: AsyncParsableCommand {
 
     struct MainApp: App {
       static var capturesSystemKeys: Bool = false
-
-      @NSApplicationDelegateAdaptor private var appDelegate: MinimalMenuAppDelegate
 
       var body: some Scene {
         WindowGroup(vm!.name) {
@@ -276,37 +270,13 @@ struct Run: AsyncParsableCommand {
             idealHeight: CGFloat(vm!.config.display.height),
             maxHeight: .infinity
           )
-        }.commands {
-          // Remove standard menu options
-          CommandGroup(replacing: .help, addition: {})
-          CommandGroup(replacing: .newItem, addition: {})
-          CommandGroup(replacing: .pasteboard, addition: {})
-          CommandGroup(replacing: .textEditing, addition: {})
-          CommandGroup(replacing: .undoRedo, addition: {})
-          CommandGroup(replacing: .windowSize, addition: {})
-          CommandGroup(replacing: .appInfo, addition: {}) 
-          CommandGroup(replacing: .appTermination) {
-            Button("Quit") {
-                Task {
-                  try vm!.stop()     
-                }
-            }.keyboardShortcut("q")
-          }          
         }
       }
     }
 
+    NSMenu.setMenuBarVisible(false)
     MainApp.capturesSystemKeys = captureSystemKeys
     MainApp.main()
-  }
-}
-
-// The only way to fully remove Edit menu item.
-class MinimalMenuAppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
-  let indexOfEditMenu = 2
-
-  func applicationDidFinishLaunching(_ : Notification) {
-    NSApplication.shared.mainMenu?.removeItem(at: indexOfEditMenu)
   }
 }
 
