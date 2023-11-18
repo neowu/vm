@@ -257,7 +257,6 @@ struct Run: AsyncParsableCommand {
     // nsApp.applicationIconImage = NSImage(data: AppIconData)
 
     struct MainApp: App {
-      static var disappearSignal: Int32 = SIGINT
       static var capturesSystemKeys: Bool = false
 
       @NSApplicationDelegateAdaptor private var appDelegate: MinimalMenuAppDelegate
@@ -265,56 +264,38 @@ struct Run: AsyncParsableCommand {
       var body: some Scene {
         WindowGroup(vm!.name) {
           Group {
-            VMView(vm: vm!, capturesSystemKeys: MainApp.capturesSystemKeys).onAppear {
-              NSWindow.allowsAutomaticWindowTabbing = false
-            }.onDisappear {
-              let ret = kill(getpid(), MainApp.disappearSignal)
-              if ret != 0 {
-                // Fallback to the old termination method that doesn't
-                // propagate the cancellation to Task's in case graceful
-                // termination via kill(2) is not successful
-                NSApplication.shared.terminate(self)
-              }
+            VMView(vm: vm!, capturesSystemKeys: MainApp.capturesSystemKeys)
+            .onAppear {
+              NSWindow.allowsAutomaticWindowTabbing = false              
             }
           }.frame(
-            minWidth: CGFloat(vm!.config.display.width),
+            minWidth: CGFloat(vm!.config.display.width/2),
             idealWidth: CGFloat(vm!.config.display.width),
             maxWidth: .infinity,
-            minHeight: CGFloat(vm!.config.display.height),
+            minHeight: CGFloat(vm!.config.display.height/2),
             idealHeight: CGFloat(vm!.config.display.height),
             maxHeight: .infinity
           )
         }.commands {
-          // Remove some standard menu options
+          // Remove standard menu options
           CommandGroup(replacing: .help, addition: {})
           CommandGroup(replacing: .newItem, addition: {})
           CommandGroup(replacing: .pasteboard, addition: {})
           CommandGroup(replacing: .textEditing, addition: {})
           CommandGroup(replacing: .undoRedo, addition: {})
           CommandGroup(replacing: .windowSize, addition: {})
-          // Replace some standard menu options
-          CommandGroup(replacing: .appInfo) { About(config: vm!.config) }
-          CommandMenu("Control") {
-            Button("Start") {
-              Task { try await vm!.virtualMachine.start() }
-            }
-            Button("Stop") {
-              Task { try await vm!.virtualMachine.stop() }
-            }
-            Button("Request Stop") {
-              Task { try vm!.virtualMachine.requestStop() }
-            }
-            if #available(macOS 14, *) {
-              Button("Suspend") {
-                kill(getpid(), SIGUSR1)
-              }
-            }
-          }
+          CommandGroup(replacing: .appInfo, addition: {}) 
+          CommandGroup(replacing: .appTermination) {
+            Button("Quit") {
+                Task {
+                  try vm!.stop()     
+                }
+            }.keyboardShortcut("q")
+          }          
         }
       }
     }
 
-    MainApp.disappearSignal = SIGINT
     MainApp.capturesSystemKeys = captureSystemKeys
     MainApp.main()
   }
@@ -329,34 +310,6 @@ class MinimalMenuAppDelegate: NSObject, NSApplicationDelegate, ObservableObject 
   }
 }
 
-struct About: View {
-  var credits: NSAttributedString
-
-  init(config: VMConfig) {
-    let mutableAttrStr = NSMutableAttributedString()
-    let style = NSMutableParagraphStyle()
-    style.alignment = NSTextAlignment.center
-    let attrCenter: [NSAttributedString.Key : Any] = [
-      .paragraphStyle: style,
-    ]
-    mutableAttrStr.append(NSAttributedString(string: "CPU: \(config.cpuCount) cores\n", attributes: attrCenter))
-    mutableAttrStr.append(NSAttributedString(string: "Memory: \(config.memorySize / 1024 / 1024) MB\n", attributes: attrCenter))
-    mutableAttrStr.append(NSAttributedString(string: "Display: \(config.display.description)\n", attributes: attrCenter))    
-    credits = mutableAttrStr
-  }
-
-  var body: some View {
-    Button("About") {
-      NSApplication.shared.orderFrontStandardAboutPanel(options: [
-        NSApplication.AboutPanelOptionKey.applicationIcon: NSApplication.shared.applicationIconImage as Any,
-        NSApplication.AboutPanelOptionKey.applicationName: "vm",
-        NSApplication.AboutPanelOptionKey.applicationVersion: "1.0.0",
-        NSApplication.AboutPanelOptionKey.credits: credits,
-      ])
-    }
-  }
-}
-
 struct VMView: NSViewRepresentable {
   typealias NSViewType = VZVirtualMachineView
 
@@ -365,12 +318,8 @@ struct VMView: NSViewRepresentable {
 
   func makeNSView(context: Context) -> NSViewType {
     let machineView = VZVirtualMachineView()
-
-    machineView.capturesSystemKeys = capturesSystemKeys
-
-    // Enable automatic display reconfiguration
-    machineView.automaticallyReconfiguresDisplay = true
-    
+    machineView.capturesSystemKeys = capturesSystemKeys        
+    machineView.automaticallyReconfiguresDisplay = false
     return machineView
   }
 
