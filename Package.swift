@@ -2,18 +2,18 @@
 
 import PackageDescription
 let package = Package(
-  name: "vm",
+  name: "vz",
   platforms: [
     .macOS(.v14)
   ],
   products: [
-    .executable(name: "vm", targets: ["vm"])
+    .executable(name: "vz", targets: ["vz"])
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.3"),
   ],
   targets: [
-    .executableTarget(name: "vm", dependencies: [
+    .executableTarget(name: "vz", dependencies: [
       .product(name: "ArgumentParser", package: "swift-argument-parser"),
     ])
   ]

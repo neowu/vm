@@ -3,9 +3,9 @@ import Darwin
 import Foundation
 
 @main
-struct Root: AsyncParsableCommand {
+struct Main: AsyncParsableCommand {
   static var configuration = CommandConfiguration(
-    commandName: "vm",
+    commandName: "vz",
     version: "1.0.0",
     subcommands: [
       Create.self,

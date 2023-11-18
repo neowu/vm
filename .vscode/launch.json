@@ -7,10 +7,10 @@
                 "swift"
             ],
             "args": [],
-            "cwd": "${workspaceFolder:vm}",
-            "name": "Debug vm",
-            "program": "${workspaceFolder:vm}/.build/debug/vm",
-            "preLaunchTask": "swift: Build Debug vm"
+            "cwd": "${workspaceFolder:vz}",
+            "name": "Debug vz",
+            "program": "${workspaceFolder:vz}/.build/debug/vz",
+            "preLaunchTask": "swift: Build Debug vz"
         },
         {
             "type": "lldb",
@@ -19,10 +19,10 @@
                 "swift"
             ],
             "args": [],
-            "cwd": "${workspaceFolder:vm}",
-            "name": "Release vm",
-            "program": "${workspaceFolder:vm}/.build/release/vm",
-            "preLaunchTask": "swift: Build Release vm"
+            "cwd": "${workspaceFolder:vz}",
+            "name": "Release vz",
+            "program": "${workspaceFolder:vz}/.build/release/vz",
+            "preLaunchTask": "swift: Build Release vz"
         }
     ]
 }
