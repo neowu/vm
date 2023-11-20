@@ -5,15 +5,15 @@ import Foundation
 struct Main: AsyncParsableCommand {
   static var configuration = CommandConfiguration(
     commandName: "vz",
+    abstract: "vm management",
     version: "1.0.0",
     subcommands: [
-      Create.self
+      Create.self,
+      Get.self,
+      Run.self,
     ])
 
-  public static func main() async throws {
-    // disable default sigint
-    signal(SIGINT, SIG_IGN)
-
+  public static func main() async {
     do {
       var command = try parseAsRoot()
       if var asyncCommand = command as? AsyncParsableCommand {
@@ -22,8 +22,6 @@ struct Main: AsyncParsableCommand {
         try command.run()
       }
     } catch {
-      print("\(error)")
-      // Handle any other exception, including ArgumentParser's ones
       exit(withError: error)
     }
   }
