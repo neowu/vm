@@ -56,29 +56,50 @@ struct Run: AsyncParsableCommand {
     }
     signal.activate()
 
-    let app = NSApplication.shared
     if gui {
-      app.setActivationPolicy(.regular)
-      app.activate(ignoringOtherApps: true)
-      NSMenu.setMenuBarVisible(false)
-
-      let pixels = config.displayInPixels()
-      let window = NSWindow(
-        contentRect: NSMakeRect(0, 0, CGFloat(pixels.0), CGFloat(pixels.1)),
-        styleMask: [.titled, .resizable, .closable], backing: .buffered, defer: false, screen: nil)
-      window.title = name
-
-      let machineView = VZVirtualMachineView(frame: window.contentLayoutRect)
-      machineView.capturesSystemKeys = true
-      machineView.automaticallyReconfiguresDisplay = false
-      machineView.virtualMachine = virtualMachine
-      machineView.autoresizingMask = [.width, .height]
-
-      window.contentView?.addSubview(machineView)
-      window.makeKeyAndOrderFront(nil)
+      runUI(vm)
     } else {
-      app.setActivationPolicy(.prohibited)
+      runInBackground()
     }
+  }
+
+  func runInBackground() {
+    let app = NSApplication.shared
+    app.setActivationPolicy(.prohibited)
+    app.run()
+  }
+
+  func runUI(_ vm: VM) {
+    let app = NSApplication.shared
+    app.setActivationPolicy(.regular)
+    app.activate(ignoringOtherApps: true)
+
+    let window = NSWindow(
+      contentRect: NSMakeRect(0, 0, 1024, 768),
+      styleMask: [.titled, .resizable, .closable], backing: .buffered, defer: false, screen: nil)
+    window.title = name
+    window.delegate = vm
+
+    let menu = NSMenu()
+    let menuItem = NSMenuItem()
+    menuItem.submenu = NSMenu()
+    menuItem.submenu?.items = [
+      NSMenuItem(
+        title: "Stop \(name)...",
+        action: #selector(NSWindow.close), keyEquivalent: "q")
+    ]
+    menu.items = [menuItem]
+    app.mainMenu = menu
+
+    let machineView = VZVirtualMachineView(frame: window.contentLayoutRect)
+    machineView.capturesSystemKeys = true
+    machineView.automaticallyReconfiguresDisplay = false
+    machineView.virtualMachine = vm.machine
+    machineView.autoresizingMask = [.width, .height]
+
+    window.contentView?.addSubview(machineView)
+    window.makeKeyAndOrderFront(nil)
+
     app.run()
   }
 }

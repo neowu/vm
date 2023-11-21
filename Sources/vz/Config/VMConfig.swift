@@ -10,7 +10,7 @@ struct VMConfig: Codable {
   var cpuCount: Int = 4
   var memorySize: UInt64 = 4 * 1024 * 1024 * 1024
   var macAddress: String?
-  var display: String?
+  var display: String = "1024x768"
   var sharing: [String: String] = [:]
 
   mutating func memorySizeInGB(_ size: Int) {
@@ -19,11 +19,6 @@ struct VMConfig: Codable {
 
   func memorySizeInGB() -> Float {
     return Float(memorySize) / (1024 * 1024 * 1024)
-  }
-
-  func displayInPixels() -> (Int, Int) {
-    let pixels = display!.components(separatedBy: "x")
-    return (Int(pixels[0])!, Int(pixels[1])!)
   }
 
   func network() -> VZVirtioNetworkDeviceConfiguration {
@@ -37,5 +32,15 @@ struct VMConfig: Codable {
     return sharing.mapValues({ value in
       return VZSharedDirectory(url: value.toFileURL(), readOnly: false)
     })
+  }
+
+  func graphics() -> VZVirtioGraphicsDeviceConfiguration {
+    let graphics = VZVirtioGraphicsDeviceConfiguration()
+    let pixels = display.components(separatedBy: "x")
+    graphics.scanouts = [
+      VZVirtioGraphicsScanoutConfiguration(
+        widthInPixels: Int(pixels[0])!, heightInPixels: Int(pixels[1])!)
+    ]
+    return graphics
   }
 }

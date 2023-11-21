@@ -1,7 +1,7 @@
 import Foundation
 import Virtualization
 
-class VM: NSObject, VZVirtualMachineDelegate {
+class VM: NSObject, VZVirtualMachineDelegate, NSWindowDelegate {
   let machine: VZVirtualMachine
 
   init(_ machine: VZVirtualMachine) {
@@ -17,7 +17,7 @@ class VM: NSObject, VZVirtualMachineDelegate {
     machine.start(completionHandler: { result in
       switch result {
       case .success:
-        Logger.info("vm started, \(Thread.current)")
+        Logger.info("vm started")
         return
       case .failure(let error):
         Logger.error("vm failed to start, error=\(error)")
@@ -64,5 +64,12 @@ class VM: NSObject, VZVirtualMachineDelegate {
   ) {
     Logger.error("vm network disconnected, device=\(networkDevice), error=\(error)")
     exit(EXIT_FAILURE)
+  }
+
+  @MainActor
+  func windowWillClose(_ notification: Notification) {
+    Task {
+      try await stop()
+    }
   }
 }

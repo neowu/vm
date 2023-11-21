@@ -29,12 +29,7 @@ struct Linux {
     configuration.memorySize = config.memorySize
 
     if gui {
-      let graphics = VZVirtioGraphicsDeviceConfiguration()
-      let pixels = config.displayInPixels()
-      graphics.scanouts = [
-        VZVirtioGraphicsScanoutConfiguration(widthInPixels: pixels.0, heightInPixels: pixels.1)
-      ]
-      configuration.graphicsDevices = [graphics]
+      configuration.graphicsDevices = [config.graphics()]
       configuration.keyboards = [VZUSBKeyboardConfiguration()]
       configuration.pointingDevices = [VZUSBScreenCoordinatePointingDeviceConfiguration()]
     }
