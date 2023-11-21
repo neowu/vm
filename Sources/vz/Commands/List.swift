@@ -22,7 +22,7 @@ struct List: ParsableCommand {
             if vmDir.initialized {
                 let config = try vmDir.config()
                 let memory = String(format: "%.2fG", config.memorySizeInGB())
-                let disk = String(format: "%.2fG", vmDir.diskUsageInGB())
+                let disk = disk(vmDir.diskURL)
                 let status = vmDir.status()
                 print(
                     """
@@ -30,5 +30,10 @@ struct List: ParsableCommand {
                     """)
             }
         }
+    }
+
+    func disk(_ path: URL) -> String {
+        let file = try! path.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .totalFileSizeKey])
+        return String(format: "%.2fG/%.0fG", Float(file.totalFileAllocatedSize!) / 1_000_000_000, Float(file.totalFileSize!) / 1_000_000_000)
     }
 }

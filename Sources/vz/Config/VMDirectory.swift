@@ -43,10 +43,6 @@ struct VMDirectory {
         return try decoder.decode(VMConfig.self, from: data!)
     }
 
-    func diskUsageInGB() -> Float {
-        return Float(File.diskUsage(diskURL)) / 1_000_000_000
-    }
-
     func status() -> String {
         let lock = FileLock(configURL)!
         return if lock.pid() == nil { "stopped" } else { "running" }

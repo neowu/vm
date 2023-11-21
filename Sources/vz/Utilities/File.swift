@@ -14,8 +14,4 @@ struct File {
         Logger.info("move dir, from=\(from), to=\(to)")
         try FileManager.default.moveItem(at: from, to: to)
     }
-
-    static func diskUsage(_ path: URL) -> Int {
-        return try! path.resourceValues(forKeys: [.totalFileAllocatedSizeKey]).totalFileAllocatedSize!
-    }
 }

@@ -12,7 +12,7 @@ struct Run: AsyncParsableCommand {
     @Flag(help: "open UI window")
     var gui: Bool = false
 
-    @Option(help: "attach disk image in read only mode, e.g. --mount=\"ubuntu.iso\"")
+    @Option(help: "attach disk image in read only mode, e.g. --mount=\"ubuntu.iso\"", completion: .file())
     var mount: String?
 
     @Flag(
@@ -27,6 +27,9 @@ struct Run: AsyncParsableCommand {
         let vmDir = Home.shared.vmDir(name)
         if !vmDir.initialized {
             throw ValidationError("vm not initialized, name=\(name)")
+        }
+        if vmDir.status() == "running" {
+            throw ValidationError("vm is running, name=\(name)")
         }
         if rosetta && VZLinuxRosettaDirectoryShare.availability != .installed {
             throw ValidationError("rosetta is not available on host")

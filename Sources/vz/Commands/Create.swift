@@ -12,7 +12,7 @@ struct Create: AsyncParsableCommand {
     @Argument(help: "vm name")
     var name: String
 
-    @Option(help: ArgumentHelp("create a linux or macOS vm"))
+    @Option(help: ArgumentHelp("create a linux or macOS vm"), completion: .list(["linux", "macOS"]))
     var os: OSOption = .linux
 
     @Option(help: ArgumentHelp("disk size in gb"))
