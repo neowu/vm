@@ -20,4 +20,15 @@ struct Home {
     func vmDir(_ name: String) -> VMDirectory {
         return VMDirectory(homeDir.appendingPathComponent(name, isDirectory: true))
     }
+
+    func vmDirs() -> [VMDirectory] {
+        if !File.exists(homeDir) {
+            return []
+        }
+        let vms = try! FileManager.default.contentsOfDirectory(at: homeDir, includingPropertiesForKeys: [])
+        return vms.compactMap({
+            let vmDir = vmDir($0.lastPathComponent)
+            return if vmDir.initialized { vmDir } else { nil }
+        })
+    }
 }

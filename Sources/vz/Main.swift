@@ -10,7 +10,8 @@ struct Main: AsyncParsableCommand {
             Create.self,
             List.self,
             Run.self,
-        ])
+        ],
+        helpNames: NameSpecification.long)
 
     public static func main() async {
         do {

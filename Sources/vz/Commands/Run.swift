@@ -6,7 +6,7 @@ import Virtualization
 struct Run: AsyncParsableCommand {
     static var configuration = CommandConfiguration(abstract: "run vm")
 
-    @Argument(help: "vm name")
+    @Argument(help: "vm name", completion: .custom(completeVMName))
     var name: String
 
     @Flag(help: "open UI window")
@@ -122,4 +122,8 @@ struct Run: AsyncParsableCommand {
 
         app.run()
     }
+}
+
+func completeVMName(_ arguments: [String]) -> [String] {
+    return Home.shared.vmDirs().map({ $0.name })
 }
