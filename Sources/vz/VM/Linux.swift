@@ -1,68 +1,71 @@
 import Virtualization
 
 struct Linux {
-  let dir: VMDirectory
-  var gui: Bool = false
-  var disk: String?
+    let dir: VMDirectory
+    var gui: Bool = false
+    var mount: String?
 
-  init(_ dir: VMDirectory) {
-    self.dir = dir
-  }
-
-  func createVirtualMachine() throws -> VZVirtualMachine {
-    Logger.info("create vm configuration")
-    let config = try createVZVirtualMachineConfiguration()
-    try config.validate()
-    return VZVirtualMachine(configuration: config)
-  }
-
-  func createVZVirtualMachineConfiguration() throws -> VZVirtualMachineConfiguration {
-    let config = try dir.config()
-
-    let configuration = VZVirtualMachineConfiguration()
-
-    let loader = VZEFIBootLoader()
-    loader.variableStore = VZEFIVariableStore(url: dir.nvramURL)
-    configuration.bootLoader = loader
-
-    configuration.cpuCount = config.cpuCount
-    configuration.memorySize = config.memorySize
-
-    if gui {
-      configuration.graphicsDevices = [config.graphics()]
-      configuration.keyboards = [VZUSBKeyboardConfiguration()]
-      configuration.pointingDevices = [VZUSBScreenCoordinatePointingDeviceConfiguration()]
+    init(_ dir: VMDirectory) {
+        self.dir = dir
     }
 
-    configuration.networkDevices = [config.network()]
-
-    var storage: [VZStorageDeviceConfiguration] = [
-      VZVirtioBlockDeviceConfiguration(
-        attachment: try VZDiskImageStorageDeviceAttachment(
-          url: dir.diskURL,
-          readOnly: false,
-          cachingMode: VZDiskImageCachingMode.automatic,
-          synchronizationMode: VZDiskImageSynchronizationMode.fsync))
-    ]
-    if let disk = disk {
-      storage.append(
-        VZUSBMassStorageDeviceConfiguration(
-          attachment: try VZDiskImageStorageDeviceAttachment(
-            url: disk.toFileURL(),
-            readOnly: true)))
-    }
-    configuration.storageDevices = storage
-
-    configuration.entropyDevices = [VZVirtioEntropyDeviceConfiguration()]
-
-    let directories = config.sharingDirectories()
-    if !directories.isEmpty {
-      let tag = VZVirtioFileSystemDeviceConfiguration.macOSGuestAutomountTag
-      let sharing = VZVirtioFileSystemDeviceConfiguration(tag: tag)
-      sharing.share = VZMultipleDirectoryShare(directories: directories)
-      configuration.directorySharingDevices = [sharing]
+    func createVirtualMachine(_ rosetta: Bool) throws -> VZVirtualMachine {
+        Logger.info("create vm")
+        let config = try dir.config()
+        let vzConfig = try createVZVirtualMachineConfiguration(config, rosetta)
+        try vzConfig.validate()
+        return VZVirtualMachine(configuration: vzConfig)
     }
 
-    return configuration
-  }
+    func createVZVirtualMachineConfiguration(_ config: VMConfig, _ rosetta: Bool) throws -> VZVirtualMachineConfiguration {
+        let vzConfig = VZVirtualMachineConfiguration()
+
+        let loader = VZEFIBootLoader()
+        loader.variableStore = VZEFIVariableStore(url: dir.nvramURL)
+        vzConfig.bootLoader = loader
+
+        vzConfig.cpuCount = config.cpu
+        vzConfig.memorySize = config.memory
+
+        if gui {
+            vzConfig.graphicsDevices = [config.graphics()]
+            vzConfig.keyboards = [VZUSBKeyboardConfiguration()]
+            vzConfig.pointingDevices = [VZUSBScreenCoordinatePointingDeviceConfiguration()]
+        }
+
+        vzConfig.networkDevices = [config.network()]
+
+        var storage: [VZStorageDeviceConfiguration] = [
+            VZVirtioBlockDeviceConfiguration(
+                attachment: try VZDiskImageStorageDeviceAttachment(
+                    url: dir.diskURL,
+                    readOnly: false,
+                    cachingMode: VZDiskImageCachingMode.automatic,
+                    synchronizationMode: VZDiskImageSynchronizationMode.fsync))
+        ]
+        if let mount = mount {
+            storage.append(
+                VZUSBMassStorageDeviceConfiguration(
+                    attachment: try VZDiskImageStorageDeviceAttachment(url: mount.toFileURL(), readOnly: true)))
+        }
+        vzConfig.storageDevices = storage
+
+        vzConfig.entropyDevices = [VZVirtioEntropyDeviceConfiguration()]
+
+        var sharing: [VZVirtioFileSystemDeviceConfiguration] = []
+        let directories = config.sharingDirectories()
+        if !directories.isEmpty {
+            let device = VZVirtioFileSystemDeviceConfiguration(tag: VZVirtioFileSystemDeviceConfiguration.macOSGuestAutomountTag)
+            device.share = VZMultipleDirectoryShare(directories: directories)
+            sharing += [device]
+        }
+        if rosetta {
+            let device = VZVirtioFileSystemDeviceConfiguration(tag: "rosetta")
+            device.share = try VZLinuxRosettaDirectoryShare()
+            sharing += [device]
+        }
+        vzConfig.directorySharingDevices = sharing
+
+        return vzConfig
+    }
 }

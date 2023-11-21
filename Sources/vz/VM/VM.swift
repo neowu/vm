@@ -29,11 +29,15 @@ class VM: NSObject, VZVirtualMachineDelegate, NSWindowDelegate {
   @MainActor
   func stop() async throws {
     Logger.info("stop vm")
+
     if machine.canRequestStop {
       Logger.info("request vm to stop")
       try machine.requestStop()
       try? await Task.sleep(nanoseconds: 30_000_000_000)
-      Logger.info("force to stop vm")
+    }
+
+    Logger.info("force to stop vm")
+    if machine.canStop {
       machine.stop { error in
         if let error = error {
           print("failed to stop the vm, error=\(error)")
