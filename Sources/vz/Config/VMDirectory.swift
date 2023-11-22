@@ -7,12 +7,18 @@ struct VMDirectory {
     let diskURL: URL
     let configURL: URL
 
+    // let vmlinuzURL: URL
+    // let initrdURL: URL
+
     init(_ dir: URL) {
         self.dir = dir
         name = dir.lastPathComponent
         nvramURL = dir.appendingPathComponent("nvram.bin")
         diskURL = dir.appendingPathComponent("disk.img")
         configURL = dir.appendingPathComponent("config.json")
+
+        // vmlinuzURL = dir.appendingPathComponent("vmlinuz")
+        // initrdURL = dir.appendingPathComponent("initrd.img")
     }
 
     func initialized() -> Bool {
@@ -54,4 +60,8 @@ struct VMDirectory {
         }
         return nil
     }
+
+    // func hasLinuxKernel() -> Bool {
+    //     File.exists(vmlinuzURL) && File.exists(initrdURL)
+    // }
 }

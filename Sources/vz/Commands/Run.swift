@@ -1,6 +1,5 @@
 import ArgumentParser
 import Foundation
-import SwiftUI
 import Virtualization
 
 struct Run: AsyncParsableCommand {

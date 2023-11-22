@@ -10,7 +10,7 @@ struct Linux {
     }
 
     func createVirtualMachine(_ config: VMConfig, _ rosetta: Bool) throws -> VZVirtualMachine {
-        Logger.info("create vm")
+        Logger.info("create linux vm")
         let vzConfig = try createVZVirtualMachineConfiguration(config, rosetta)
         try vzConfig.validate()
         return VZVirtualMachine(configuration: vzConfig)
@@ -19,12 +19,12 @@ struct Linux {
     func createVZVirtualMachineConfiguration(_ config: VMConfig, _ rosetta: Bool) throws -> VZVirtualMachineConfiguration {
         let vzConfig = VZVirtualMachineConfiguration()
 
-        let loader = VZEFIBootLoader()
-        loader.variableStore = VZEFIVariableStore(url: dir.nvramURL)
-        vzConfig.bootLoader = loader
+        vzConfig.bootLoader = createBootLoader()
 
         vzConfig.cpuCount = config.cpu
         vzConfig.memorySize = config.memory
+
+        vzConfig.platform = VZGenericPlatformConfiguration()
 
         if gui {
             vzConfig.graphicsDevices = [config.graphics()]
@@ -66,5 +66,19 @@ struct Linux {
         vzConfig.directorySharingDevices = sharing
 
         return vzConfig
+    }
+
+    private func createBootLoader() -> VZBootLoader {
+        // if dir.hasLinuxKernel() {
+        //     Logger.info("use linux kernel boot loader")
+        //     let bootLoader = VZLinuxBootLoader(kernelURL: dir.vmlinuzURL)
+        //     bootLoader.initialRamdiskURL = dir.initrdURL
+        //     bootLoader.commandLine = "root=/dev/vda2 ro"
+        //     return bootLoader
+        // }
+
+        let loader = VZEFIBootLoader()
+        loader.variableStore = VZEFIVariableStore(url: dir.nvramURL)
+        return loader
     }
 }
