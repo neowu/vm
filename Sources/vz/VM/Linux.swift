@@ -9,9 +9,8 @@ struct Linux {
         self.dir = dir
     }
 
-    func createVirtualMachine(_ rosetta: Bool) throws -> VZVirtualMachine {
+    func createVirtualMachine(_ config: VMConfig, _ rosetta: Bool) throws -> VZVirtualMachine {
         Logger.info("create vm")
-        let config = try dir.config()
         let vzConfig = try createVZVirtualMachineConfiguration(config, rosetta)
         try vzConfig.validate()
         return VZVirtualMachine(configuration: vzConfig)

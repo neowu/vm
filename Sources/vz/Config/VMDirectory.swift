@@ -43,11 +43,6 @@ struct VMDirectory {
         return try decoder.decode(VMConfig.self, from: data!)
     }
 
-    func lock() -> Bool {
-        let lock = FileLock(configURL)
-        return lock != nil && lock!.lock()
-    }
-
     func status() -> String {
         let lock = FileLock(configURL)!
         return if lock.pid() == nil { "stopped" } else { "running" }

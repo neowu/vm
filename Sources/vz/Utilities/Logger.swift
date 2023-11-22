@@ -7,7 +7,7 @@ struct Logger {
     }
 
     static func error(_ message: String) {
-        print("[ERROR] \(message)")
-        fflush(stdout)
+        fputs("[ERROR] \(message)\n", stderr)
+        fflush(stderr)
     }
 }

@@ -43,28 +43,31 @@ struct Run: AsyncParsableCommand {
     @MainActor
     func run() throws {
         let vmDir = Home.shared.vmDir(name)
+        let config = try vmDir.config()
 
+        // must hold lock reference, otherwise fd will de deallocated, and release all locks
         let lock = FileLock(vmDir.configURL)
         if lock == nil || !lock!.lock() {
             Logger.error("vm is already running, name=\(name)")
             throw ExitCode.failure
         }
 
-        let config = try vmDir.config()
-
         let virtualMachine: VZVirtualMachine
         if config.os == .linux {
             var linux = Linux(vmDir)
             linux.gui = gui
             linux.mount = mount
-            virtualMachine = try linux.createVirtualMachine(rosetta)
+            virtualMachine = try linux.createVirtualMachine(config, rosetta)
         } else {
             throw ExitCode.failure
         }
 
         let vm = VM(virtualMachine)
-        handleSignal(SIGINT, vm)
-        handleSignal(SIGTERM, vm)
+
+        // must hold signals reference, otherwise it will de deallocated
+        var signals: [DispatchSourceSignal] = []
+        signals.append(handleSignal(SIGINT, vm))
+        signals.append(handleSignal(SIGTERM, vm))
 
         Task {
             vm.start()
@@ -117,7 +120,7 @@ struct Run: AsyncParsableCommand {
         app.run()
     }
 
-    func handleSignal(_ sig: Int32, _ vm: VM) {
+    func handleSignal(_ sig: Int32, _ vm: VM) -> DispatchSourceSignal {
         signal(sig, SIG_IGN)
         let signal = DispatchSource.makeSignalSource(signal: sig)
         signal.setEventHandler {
@@ -126,12 +129,9 @@ struct Run: AsyncParsableCommand {
             }
         }
         signal.activate()
-        signals.append(signal)
+        return signal
     }
 }
-
-// must keep signals global, otherwise it will de deallocated after function scope
-var signals: [DispatchSourceSignal] = []
 
 func completeVMName(_ arguments: [String]) -> [String] {
     return Home.shared.vmDirs().map({ $0.name })
