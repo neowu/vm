@@ -10,7 +10,7 @@ struct Linux {
     }
 
     func createVirtualMachine(_ config: VMConfig, _ rosetta: Bool) throws -> VZVirtualMachine {
-        Logger.info("create linux vm")
+        Logger.info("create linux vm, name=\(dir.name)")
         let vzConfig = try createVZVirtualMachineConfiguration(config, rosetta)
         try vzConfig.validate()
         return VZVirtualMachine(configuration: vzConfig)

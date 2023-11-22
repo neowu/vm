@@ -1,13 +1,12 @@
 import ArgumentParser
 import Virtualization
 
-struct GetIPSWURL: AsyncParsableCommand {
+struct IPSW: AsyncParsableCommand {
     static var configuration = CommandConfiguration(
-        commandName: "get-ipsw-url", 
-        abstract: "Get macOS restore image ipsw url",
+        abstract: "get macOS restore image ipsw url",
         discussion: """
-        download ipsw file manually, then pass the path to create command
-        """
+            download ipsw file manually, then use in create command
+            """
     )
 
     func run() async throws {
@@ -17,7 +16,7 @@ struct GetIPSWURL: AsyncParsableCommand {
 
     func latestIPSWURL() async throws -> URL {
         let image = try await withCheckedThrowingContinuation { continuation in
-            VZMacOSRestoreImage.fetchLatestSupported() { result in
+            VZMacOSRestoreImage.fetchLatestSupported { result in
                 continuation.resume(with: result)
             }
         }
