@@ -42,9 +42,8 @@ struct Run: AsyncParsableCommand {
 
     @MainActor
     func run() throws {
-        signal(SIGINT, SIG_IGN)
-
         let vmDir = Home.shared.vmDir(name)
+
         let lock = FileLock(vmDir.configURL)
         if lock == nil || !lock!.lock() {
             Logger.error("vm is already running, name=\(name)")
@@ -64,17 +63,12 @@ struct Run: AsyncParsableCommand {
         }
 
         let vm = VM(virtualMachine)
+        handleSignal(SIGINT, vm)
+        handleSignal(SIGTERM, vm)
+
         Task {
             vm.start()
         }
-
-        let signal = DispatchSource.makeSignalSource(signal: SIGINT)
-        signal.setEventHandler {
-            Task {
-                try await vm.stop()
-            }
-        }
-        signal.activate()
 
         if gui {
             runUI(vm)
@@ -122,7 +116,22 @@ struct Run: AsyncParsableCommand {
 
         app.run()
     }
+
+    func handleSignal(_ sig: Int32, _ vm: VM) {
+        signal(sig, SIG_IGN)
+        let signal = DispatchSource.makeSignalSource(signal: sig)
+        signal.setEventHandler {
+            Task {
+                try await vm.stop()
+            }
+        }
+        signal.activate()
+        signals.append(signal)
+    }
 }
+
+// must keep signals global, otherwise it will de deallocated after function scope
+var signals: [DispatchSourceSignal] = []
 
 func completeVMName(_ arguments: [String]) -> [String] {
     return Home.shared.vmDirs().map({ $0.name })

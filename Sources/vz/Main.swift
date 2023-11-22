@@ -10,6 +10,7 @@ struct Main: AsyncParsableCommand {
             Create.self,
             List.self,
             Run.self,
+            Test.self,
         ],
         helpNames: NameSpecification.long)
 
