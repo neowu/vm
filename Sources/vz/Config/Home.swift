@@ -28,7 +28,7 @@ struct Home {
         let vms = try! FileManager.default.contentsOfDirectory(at: homeDir, includingPropertiesForKeys: [])
         return vms.compactMap({
             let vmDir = vmDir($0.lastPathComponent)
-            return if vmDir.initialized { vmDir } else { nil }
+            return if vmDir.initialized() { vmDir } else { nil }
         })
     }
 }

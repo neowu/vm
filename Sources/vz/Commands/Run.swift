@@ -25,16 +25,16 @@ struct Run: AsyncParsableCommand {
 
     func validate() throws {
         let vmDir = Home.shared.vmDir(name)
-        if !vmDir.initialized {
+        if !vmDir.initialized() {
             throw ValidationError("vm not initialized, name=\(name)")
         }
-        if vmDir.status() == "running" {
+        if vmDir.pid() != nil {
             throw ValidationError("vm is running, name=\(name)")
         }
         if rosetta && VZLinuxRosettaDirectoryShare.availability != .installed {
             throw ValidationError("rosetta is not available on host")
         }
-        let config = try vmDir.config()
+        let config = try vmDir.loadConfig()
         if rosetta && config.os != .linux {
             throw ValidationError("rosetta must use with linux guest")
         }
@@ -43,11 +43,11 @@ struct Run: AsyncParsableCommand {
     @MainActor
     func run() throws {
         let vmDir = Home.shared.vmDir(name)
-        let config = try vmDir.config()
+        let config = try vmDir.loadConfig()
 
         // must hold lock reference, otherwise fd will de deallocated, and release all locks
-        let lock = FileLock(vmDir.configURL)
-        if lock == nil || !lock!.lock() {
+        let lock = vmDir.lock()
+        if lock == nil {
             Logger.error("vm is already running, name=\(name)")
             throw ExitCode.failure
         }

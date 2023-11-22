@@ -15,10 +15,8 @@ struct VMDirectory {
         configURL = dir.appendingPathComponent("config.json")
     }
 
-    var initialized: Bool {
-        File.exists(configURL)
-            && File.exists(diskURL)
-            && File.exists(nvramURL)
+    func initialized() -> Bool {
+        File.exists(configURL) && File.exists(diskURL) && File.exists(nvramURL)
     }
 
     func resizeDisk(_ sizeInGB: Int) throws {
@@ -30,21 +28,30 @@ struct VMDirectory {
         try handle.close()
     }
 
-    func saveConfig(config: VMConfig) throws {
+    func saveConfig(_ config: VMConfig) throws {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(config)
         FileManager.default.createFile(atPath: configURL.path, contents: data)
     }
 
-    func config() throws -> VMConfig {
+    func loadConfig() throws -> VMConfig {
         let data = FileManager.default.contents(atPath: configURL.path)
         let decoder = JSONDecoder()
         return try decoder.decode(VMConfig.self, from: data!)
     }
 
-    func status() -> String {
-        let lock = FileLock(configURL)!
-        return if lock.pid() == nil { "stopped" } else { "running" }
+    func pid() -> pid_t? {
+        if let lock = FileLock(configURL) {
+            return lock.pid()
+        }
+        return nil
+    }
+
+    func lock() -> FileLock? {
+        if let lock = FileLock(configURL), lock.lock() {
+            return lock
+        }
+        return nil
     }
 }

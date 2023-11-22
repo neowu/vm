@@ -19,7 +19,7 @@ struct Create: AsyncParsableCommand {
     var diskSize: Int = 50
 
     func validate() throws {
-        if Home.shared.vmDir(name).initialized {
+        if Home.shared.vmDir(name).initialized() {
             throw ValidationError("vm already exists, name=\(name)")
         }
     }
@@ -46,7 +46,7 @@ struct Create: AsyncParsableCommand {
         }
         config.macAddress = VZMACAddress.randomLocallyAdministered().string
 
-        try tempDir.saveConfig(config: config)
+        try tempDir.saveConfig(config)
 
         let vmDir = Home.shared.vmDir(name)
         try File.move(tempDir.dir, vmDir.dir)
