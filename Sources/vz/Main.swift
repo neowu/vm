@@ -5,7 +5,7 @@ import Foundation
 struct Main: AsyncParsableCommand {
     static var configuration = CommandConfiguration(
         commandName: "vz",
-        version: "1.0.0",
+        version: "0.1.0",
         subcommands: [
             Create.self,
             List.self,

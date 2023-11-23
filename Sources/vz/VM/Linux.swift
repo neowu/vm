@@ -49,6 +49,7 @@ struct Linux {
         }
         vzConfig.storageDevices = storage
 
+        vzConfig.memoryBalloonDevices = [VZVirtioTraditionalMemoryBalloonDeviceConfiguration()]
         vzConfig.entropyDevices = [VZVirtioEntropyDeviceConfiguration()]
 
         var sharing: [VZVirtioFileSystemDeviceConfiguration] = []
