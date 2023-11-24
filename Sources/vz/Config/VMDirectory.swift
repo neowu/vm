@@ -7,30 +7,24 @@ struct VMDirectory {
     let diskURL: URL
     let configURL: URL
 
-    // let vmlinuzURL: URL
-    // let initrdURL: URL
-
     init(_ dir: URL) {
         self.dir = dir
         name = dir.lastPathComponent
         nvramURL = dir.appendingPathComponent("nvram.bin")
         diskURL = dir.appendingPathComponent("disk.img")
         configURL = dir.appendingPathComponent("config.json")
-
-        // vmlinuzURL = dir.appendingPathComponent("vmlinuz")
-        // initrdURL = dir.appendingPathComponent("initrd.img")
     }
 
     func initialized() -> Bool {
         File.exists(configURL) && File.exists(diskURL) && File.exists(nvramURL)
     }
 
-    func resizeDisk(_ sizeInGB: Int) throws {
+    func resizeDisk(_ size: UInt64) throws {
         if !File.exists(diskURL) {
             FileManager.default.createFile(atPath: diskURL.path, contents: nil, attributes: nil)
         }
         let handle = try FileHandle.init(forWritingTo: diskURL)
-        try handle.truncate(atOffset: UInt64(sizeInGB) * 1_000_000_000)
+        try handle.truncate(atOffset: size)
         try handle.close()
     }
 
@@ -60,8 +54,4 @@ struct VMDirectory {
         }
         return nil
     }
-
-    // func hasLinuxKernel() -> Bool {
-    //     File.exists(vmlinuzURL) && File.exists(initrdURL)
-    // }
 }

@@ -11,6 +11,7 @@ struct Main: AsyncParsableCommand {
             List.self,
             Run.self,
             IPSW.self,
+            Resize.self,
         ],
         helpNames: NameSpecification.long)
 

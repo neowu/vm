@@ -31,7 +31,7 @@ struct Create: AsyncParsableCommand {
         _ = try VZEFIVariableStore(creatingVariableStoreAt: tempDir.nvramURL)
 
         Logger.info("create image.bin, size=\(diskSize)G")
-        try tempDir.resizeDisk(diskSize)
+        try tempDir.resizeDisk(UInt64(diskSize) * 1_000_000_000)
 
         Logger.info("create config.json")
         var config = VMConfig()
@@ -39,10 +39,10 @@ struct Create: AsyncParsableCommand {
         switch os {
         case .linux:
             config.os = .linux
-            config.memorySizeInGB(4)
+            config.memory = 1 * 1024 * 1024 * 1024
         case .macOS:
             config.os = .macOS
-            config.memorySizeInGB(8)
+            config.memory = 8 * 1024 * 1024 * 1024
         }
         config.macAddress = VZMACAddress.randomLocallyAdministered().string
 
@@ -50,5 +50,6 @@ struct Create: AsyncParsableCommand {
 
         let vmDir = Home.shared.vmDir(name)
         try File.move(tempDir.dir, vmDir.dir)
+        Logger.info("vm created, name=\(name), config=\(vmDir.configURL.path)")
     }
 }
