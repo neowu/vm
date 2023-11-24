@@ -19,7 +19,7 @@ struct List: ParsableCommand {
             """)
         for vmDir in vmDirs {
             let config = try vmDir.loadConfig()
-            let memory = String(format: "%.2fG", config.memory / (1024 * 1024 * 1024))
+            let memory = String(format: "%.2fG", Float(config.memory) / (1024 * 1024 * 1024))
             let disk = disk(vmDir.diskURL)
             let status = if vmDir.pid() == nil { "stopped" } else { "running" }
             print(
