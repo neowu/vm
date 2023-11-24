@@ -4,19 +4,20 @@ struct Linux {
     let dir: VMDirectory
     var gui: Bool = false
     var mount: String?
+    var rosetta: Bool = false
 
     init(_ dir: VMDirectory) {
         self.dir = dir
     }
 
-    func createVirtualMachine(_ config: VMConfig, _ rosetta: Bool) throws -> VZVirtualMachine {
+    func createVirtualMachine(_ config: VMConfig) throws -> VZVirtualMachine {
         Logger.info("create linux vm, name=\(dir.name)")
-        let vzConfig = try createVZVirtualMachineConfiguration(config, rosetta)
+        let vzConfig = try createVZVirtualMachineConfiguration(config)
         try vzConfig.validate()
         return VZVirtualMachine(configuration: vzConfig)
     }
 
-    func createVZVirtualMachineConfiguration(_ config: VMConfig, _ rosetta: Bool) throws -> VZVirtualMachineConfiguration {
+    func createVZVirtualMachineConfiguration(_ config: VMConfig) throws -> VZVirtualMachineConfiguration {
         let vzConfig = VZVirtualMachineConfiguration()
 
         vzConfig.bootLoader = createBootLoader()
@@ -70,14 +71,6 @@ struct Linux {
     }
 
     private func createBootLoader() -> VZBootLoader {
-        // if dir.hasLinuxKernel() {
-        //     Logger.info("use linux kernel boot loader")
-        //     let bootLoader = VZLinuxBootLoader(kernelURL: dir.vmlinuzURL)
-        //     bootLoader.initialRamdiskURL = dir.initrdURL
-        //     bootLoader.commandLine = "root=/dev/vda2 ro"
-        //     return bootLoader
-        // }
-
         let loader = VZEFIBootLoader()
         loader.variableStore = VZEFIVariableStore(url: dir.nvramURL)
         return loader

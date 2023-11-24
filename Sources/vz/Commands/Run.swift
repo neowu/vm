@@ -11,7 +11,7 @@ struct Run: AsyncParsableCommand {
     @Flag(help: "open UI window")
     var gui: Bool = false
 
-    @Option(help: "attach disk image in read only mode, e.g. --mount=\"ubuntu.iso\"", completion: .file())
+    @Option(help: "attach disk image in read only mode, e.g. --mount=\"debian.iso\"", completion: .file())
     var mount: String?
 
     @Flag(
@@ -29,6 +29,9 @@ struct Run: AsyncParsableCommand {
         }
         if vmDir.pid() != nil {
             throw ValidationError("vm is running, name=\(name)")
+        }
+        if let mount = mount, !File.exists(mount.toFileURL()) {
+            throw ValidationError("mount file not exits, mount=\(mount.toFileURL())")
         }
         if rosetta && VZLinuxRosettaDirectoryShare.availability != .installed {
             throw ValidationError("rosetta is not available on host")
@@ -56,7 +59,8 @@ struct Run: AsyncParsableCommand {
             var linux = Linux(vmDir)
             linux.gui = gui
             linux.mount = mount
-            virtualMachine = try linux.createVirtualMachine(config, rosetta)
+            linux.rosetta = rosetta
+            virtualMachine = try linux.createVirtualMachine(config)
         } else {
             throw ExitCode.failure
         }
