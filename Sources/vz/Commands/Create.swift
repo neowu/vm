@@ -2,18 +2,14 @@ import ArgumentParser
 import Foundation
 import Virtualization
 
-enum OSOption: String, ExpressibleByArgument {
-    case linux, macOS
-}
-
-struct Create: AsyncParsableCommand {
+struct Create: ParsableCommand {
     static var configuration = CommandConfiguration(abstract: "create a vm")
 
     @Argument(help: "vm name")
     var name: String
 
     @Option(help: ArgumentHelp("create a linux or macOS vm"), completion: .list(["linux", "macOS"]))
-    var os: OSOption = .linux
+    var os: OS = .linux
 
     @Option(help: ArgumentHelp("disk size in gb"))
     var diskSize: Int = 50
@@ -24,7 +20,7 @@ struct Create: AsyncParsableCommand {
         }
     }
 
-    func run() async throws {
+    func run() throws {
         let tempDir = try Home.shared.createTempVMDirectory()
 
         Logger.info("create nvram.bin")

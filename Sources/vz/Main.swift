@@ -5,11 +5,13 @@ import Foundation
 struct Main: AsyncParsableCommand {
     static var configuration = CommandConfiguration(
         commandName: "vz",
+        abstract: "manage virtual machines",
         version: "0.1.0",
         subcommands: [
             Create.self,
             List.self,
             Run.self,
+            Stop.self,
             IPSW.self,
             Resize.self,
         ],

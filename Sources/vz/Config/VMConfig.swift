@@ -1,7 +1,8 @@
+import ArgumentParser
 import Foundation
 import Virtualization
 
-enum OS: String, Codable {
+enum OS: String, Codable, ExpressibleByArgument {
     case linux, macOS
 }
 

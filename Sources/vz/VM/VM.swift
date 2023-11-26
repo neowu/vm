@@ -33,7 +33,7 @@ class VM: NSObject, VZVirtualMachineDelegate, NSWindowDelegate {
         if machine.canRequestStop {
             Logger.info("request vm to stop")
             try machine.requestStop()
-            try? await Task.sleep(nanoseconds: 15_000_000_000)
+            try await Task.sleep(nanoseconds: 15_000_000_000)
         }
 
         Logger.info("force to stop vm")

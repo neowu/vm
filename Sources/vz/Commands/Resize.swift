@@ -1,10 +1,10 @@
 import ArgumentParser
 import Virtualization
 
-struct Resize: AsyncParsableCommand {
+struct Resize: ParsableCommand {
     static var configuration = CommandConfiguration(abstract: "increase disk image size")
 
-    @Argument(help: "vm name")
+    @Argument(help: "vm name", completion: .custom(completeVMName))
     var name: String
 
     @Option(help: ArgumentHelp("disk size in gb"))
@@ -22,7 +22,7 @@ struct Resize: AsyncParsableCommand {
         }
     }
 
-    func run() async throws {
+    func run() throws {
         let vmDir = Home.shared.vmDir(name)
         Logger.info("resize image.bin, size=\(diskSize)G")
         try vmDir.resizeDisk(UInt64(diskSize) * 1_000_000_000)
