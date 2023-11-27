@@ -3,7 +3,7 @@ import Virtualization
 struct Linux {
     let dir: VMDirectory
     var gui: Bool = false
-    var mount: String?
+    var mount: Path?
     var rosetta: Bool = false
 
     init(_ dir: VMDirectory) {
@@ -38,7 +38,7 @@ struct Linux {
         var storage: [VZStorageDeviceConfiguration] = [
             VZVirtioBlockDeviceConfiguration(
                 attachment: try VZDiskImageStorageDeviceAttachment(
-                    url: dir.diskURL,
+                    url: dir.diskPath.url,
                     readOnly: false,
                     cachingMode: VZDiskImageCachingMode.automatic,
                     synchronizationMode: VZDiskImageSynchronizationMode.fsync))
@@ -46,7 +46,7 @@ struct Linux {
         if let mount = mount {
             storage.append(
                 VZUSBMassStorageDeviceConfiguration(
-                    attachment: try VZDiskImageStorageDeviceAttachment(url: mount.toFileURL(), readOnly: true)))
+                    attachment: try VZDiskImageStorageDeviceAttachment(url: mount.url, readOnly: true)))
         }
         vzConfig.storageDevices = storage
 
@@ -72,7 +72,7 @@ struct Linux {
 
     private func createBootLoader() -> VZBootLoader {
         let loader = VZEFIBootLoader()
-        loader.variableStore = VZEFIVariableStore(url: dir.nvramURL)
+        loader.variableStore = VZEFIVariableStore(url: dir.nvramPath.url)
         return loader
     }
 }

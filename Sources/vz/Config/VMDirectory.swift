@@ -1,29 +1,31 @@
 import Foundation
 
 struct VMDirectory {
-    let dir: URL
-    let name: String
-    let nvramURL: URL
-    let diskURL: URL
-    let configURL: URL
+    let dir: Path
+    let nvramPath: Path
+    let diskPath: Path
+    let configPath: Path
 
-    init(_ dir: URL) {
+    init(_ dir: Path) {
         self.dir = dir
-        name = dir.lastPathComponent
-        nvramURL = dir.appendingPathComponent("nvram.bin")
-        diskURL = dir.appendingPathComponent("disk.img")
-        configURL = dir.appendingPathComponent("config.json")
+        nvramPath = dir.file("nvram.bin")
+        diskPath = dir.file("disk.img")
+        configPath = dir.file("config.json")
+    }
+
+    var name: String {
+        return dir.name
     }
 
     func initialized() -> Bool {
-        File.exists(configURL) && File.exists(diskURL) && File.exists(nvramURL)
+        configPath.exists() && diskPath.exists() && nvramPath.exists()
     }
 
     func resizeDisk(_ size: UInt64) throws {
-        if !File.exists(diskURL) {
-            FileManager.default.createFile(atPath: diskURL.path, contents: nil, attributes: nil)
+        if !diskPath.exists() {
+            FileManager.default.createFile(atPath: diskPath.path, contents: nil, attributes: nil)
         }
-        let handle = try FileHandle.init(forWritingTo: diskURL)
+        let handle = try FileHandle.init(forWritingTo: diskPath.url)
         try handle.truncate(atOffset: size)
         try handle.close()
     }
@@ -32,24 +34,24 @@ struct VMDirectory {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(config)
-        FileManager.default.createFile(atPath: configURL.path, contents: data)
+        FileManager.default.createFile(atPath: configPath.path, contents: data)
     }
 
     func loadConfig() throws -> VMConfig {
-        let data = FileManager.default.contents(atPath: configURL.path)
+        let data = FileManager.default.contents(atPath: configPath.path)
         let decoder = JSONDecoder()
         return try decoder.decode(VMConfig.self, from: data!)
     }
 
     func pid() -> pid_t? {
-        if let lock = FileLock(configURL) {
+        if let lock = FileLock(configPath) {
             return lock.pid()
         }
         return nil
     }
 
     func lock() -> FileLock? {
-        if let lock = FileLock(configURL), lock.lock() {
+        if let lock = FileLock(configPath), lock.lock() {
             return lock
         }
         return nil

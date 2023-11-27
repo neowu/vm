@@ -15,7 +15,7 @@ struct Resize: ParsableCommand {
         if !vmDir.initialized() {
             throw ValidationError("vm not initialized, name=\(name)")
         }
-        let file = try vmDir.diskURL.resourceValues(forKeys: [.totalFileSizeKey])
+        let file = try vmDir.diskPath.url.resourceValues(forKeys: [.totalFileSizeKey])
         let currentSize = file.totalFileSize!
         if currentSize >= diskSize * 1_000_000_000 {
             throw ValidationError("disk size must larger than current, current=\(currentSize)")

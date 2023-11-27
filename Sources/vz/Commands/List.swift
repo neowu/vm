@@ -6,7 +6,7 @@ struct List: ParsableCommand {
     static var configuration = CommandConfiguration(commandName: "ls", abstract: "list vm status")
 
     func validate() throws {
-        if !File.exists(Home.shared.homeDir) {
+        if !Home.shared.homeDir.exists() {
             throw ValidationError("~/.vm not exists")
         }
     }
@@ -20,7 +20,7 @@ struct List: ParsableCommand {
         for vmDir in vmDirs {
             let config = try vmDir.loadConfig()
             let memory = String(format: "%.2fG", Float(config.memory) / (1024 * 1024 * 1024))
-            let disk = disk(vmDir.diskURL)
+            let disk = disk(vmDir.diskPath)
             let status = if vmDir.pid() == nil { "stopped" } else { "running" }
             print(
                 """
@@ -29,8 +29,8 @@ struct List: ParsableCommand {
         }
     }
 
-    func disk(_ diskURL: URL) -> String {
-        let file = try! diskURL.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .totalFileSizeKey])
+    func disk(_ diskPath: Path) -> String {
+        let file = try! diskPath.url.resourceValues(forKeys: [.totalFileAllocatedSizeKey, .totalFileSizeKey])
         return String(format: "%.2fG/%.0fG", Float(file.totalFileAllocatedSize!) / 1_000_000_000, Float(file.totalFileSize!) / 1_000_000_000)
     }
 }

@@ -4,8 +4,8 @@ class FileLock {
     let fd: Int32
 
     // url must be file
-    init?(_ url: URL) {
-        fd = open(url.path, O_WRONLY)
+    init?(_ path: Path) {
+        fd = open(path.path, O_WRONLY)
         if fd == -1 {
             return nil
         }

@@ -8,11 +8,17 @@ struct Run: AsyncParsableCommand {
     @Argument(help: "vm name", completion: .custom(completeVMName))
     var name: String
 
+    @Flag(name: .short, help: "run vm in background")
+    var detached: Bool = false
+
     @Flag(help: "open UI window")
     var gui: Bool = false
 
     @Option(help: "attach disk image in read only mode, e.g. --mount=\"debian.iso\"", completion: .file())
-    var mount: String?
+    var mount: Path?
+
+    @Option(help: ArgumentHelp(visibility: .hidden))
+    var logPath: Path?
 
     @Flag(
         help: ArgumentHelp(
@@ -23,6 +29,15 @@ struct Run: AsyncParsableCommand {
     var rosetta: Bool = false
 
     func validate() throws {
+        if detached {
+            if gui || mount != nil {
+                throw ValidationError("-d must not use with --gui and --mount")
+            }
+            let logFile = Path("~/Library/Logs/vz.log")
+            if logFile.exists() && !logFile.writable() {  // freopen() creates file if not exists
+                throw ValidationError("detach mode log file is not writable, file=\(logFile)")
+            }
+        }
         let vmDir = Home.shared.vmDir(name)
         if !vmDir.initialized() {
             throw ValidationError("vm not initialized, name=\(name)")
@@ -30,8 +45,8 @@ struct Run: AsyncParsableCommand {
         if vmDir.pid() != nil {
             throw ValidationError("vm is running, name=\(name)")
         }
-        if let mount = mount, !File.exists(mount.toFileURL()) {
-            throw ValidationError("mount file not exits, mount=\(mount.toFileURL())")
+        if let mount = mount, !mount.exists() {
+            throw ValidationError("mount file not exits, mount=\(mount)")
         }
         if rosetta && VZLinuxRosettaDirectoryShare.availability != .installed {
             throw ValidationError("rosetta is not available on host")
@@ -52,6 +67,15 @@ struct Run: AsyncParsableCommand {
         if lock == nil {
             Logger.error("vm is already running, name=\(name)")
             throw ExitCode.failure
+        }
+
+        if detached == true {
+            try runInBackground()
+        }
+
+        if let logPath = logPath {
+            freopen(logPath.path, "w", stdout)
+            freopen(logPath.path, "w", stderr)
         }
 
         let virtualMachine: VZVirtualMachine
@@ -79,11 +103,24 @@ struct Run: AsyncParsableCommand {
         if gui {
             runUI(vm)
         } else {
-            runInBackground()
+            runCLI()
         }
     }
 
-    func runInBackground() {
+    func runInBackground() throws {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: Bundle.main.executablePath!)
+        let logFile = Path("~/Library/Logs/vz.log")
+        var arguments = ["run", name, "--log-path", logFile.path]
+        if rosetta {
+            arguments.append("--rosetta")
+        }
+        task.arguments = arguments
+        task.launch()
+        throw CleanExit.message("vm launched in background, check log in \(logFile)")
+    }
+
+    func runCLI() {
         let app = NSApplication.shared
         app.setActivationPolicy(.prohibited)
         app.run()

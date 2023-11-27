@@ -24,7 +24,7 @@ struct Create: ParsableCommand {
         let tempDir = try Home.shared.createTempVMDirectory()
 
         Logger.info("create nvram.bin")
-        _ = try VZEFIVariableStore(creatingVariableStoreAt: tempDir.nvramURL)
+        _ = try VZEFIVariableStore(creatingVariableStoreAt: tempDir.nvramPath.url)
 
         Logger.info("create image.bin, size=\(diskSize)G")
         try tempDir.resizeDisk(UInt64(diskSize) * 1_000_000_000)
@@ -45,7 +45,9 @@ struct Create: ParsableCommand {
         try tempDir.saveConfig(config)
 
         let vmDir = Home.shared.vmDir(name)
-        try File.move(tempDir.dir, vmDir.dir)
-        Logger.info("vm created, name=\(name), config=\(vmDir.configURL.path)")
+        Logger.info("move vm dir, from=\(tempDir.dir), to=\(vmDir.dir)")
+        try FileManager.default.moveItem(at: tempDir.dir.url, to: vmDir.dir.url)
+
+        Logger.info("vm created, name=\(name), config=\(vmDir.configPath)")
     }
 }

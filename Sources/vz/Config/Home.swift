@@ -3,28 +3,28 @@ import Foundation
 struct Home {
     static let shared = Home()
 
-    let homeDir: URL
+    let homeDir: Path
 
     init() {
-        homeDir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".vm", isDirectory: true)
+        homeDir = Path("~/.vm")
     }
 
     func createTempVMDirectory() throws -> VMDirectory {
-        let tempDir = homeDir.appendingPathComponent(UUID().uuidString)
-        try File.createDirectory(tempDir)
+        let tempDir = homeDir.directory(UUID().uuidString)
+        Logger.info("create dir, dir=\(tempDir)")
+        try FileManager.default.createDirectory(at: tempDir.url, withIntermediateDirectories: true)
         return VMDirectory(tempDir)
     }
 
     func vmDir(_ name: String) -> VMDirectory {
-        return VMDirectory(homeDir.appendingPathComponent(name, isDirectory: true))
+        return VMDirectory(homeDir.directory(name))
     }
 
     func vmDirs() -> [VMDirectory] {
-        if !File.exists(homeDir) {
+        if !homeDir.exists() {
             return []
         }
-        let vms = try! FileManager.default.contentsOfDirectory(at: homeDir, includingPropertiesForKeys: [])
+        let vms = try! FileManager.default.contentsOfDirectory(at: homeDir.url, includingPropertiesForKeys: [])
         return vms.compactMap({
             let vmDir = vmDir($0.lastPathComponent)
             return if vmDir.initialized() { vmDir } else { nil }

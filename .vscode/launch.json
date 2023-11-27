@@ -23,6 +23,30 @@
             "name": "Release vz",
             "program": "${workspaceFolder:vz}/.build/release/vz",
             "preLaunchTask": "swift: Build Release vz"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:vz}",
+            "name": "Debug test",
+            "program": "${workspaceFolder:vz}/.build/debug/test",
+            "preLaunchTask": "swift: Build Debug test"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "sourceLanguages": [
+                "swift"
+            ],
+            "args": [],
+            "cwd": "${workspaceFolder:vz}",
+            "name": "Release test",
+            "program": "${workspaceFolder:vz}/.build/release/test",
+            "preLaunchTask": "swift: Build Release test"
         }
     ]
 }

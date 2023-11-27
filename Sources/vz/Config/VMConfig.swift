@@ -23,7 +23,7 @@ struct VMConfig: Codable {
 
     func sharingDirectories() -> [String: VZSharedDirectory] {
         return sharing.mapValues({ value in
-            return VZSharedDirectory(url: value.toFileURL(), readOnly: false)
+            return VZSharedDirectory(url: Path(value).url, readOnly: false)
         })
     }
 
