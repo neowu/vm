@@ -1,8 +1,7 @@
 import Virtualization
 
-struct Linux {
+struct MacOS {
     let dir: VMDirectory
-    var gui: Bool = false
     var mount: Path?
 
     init(_ dir: VMDirectory) {
@@ -10,7 +9,7 @@ struct Linux {
     }
 
     func createVirtualMachine(_ config: VMConfig) throws -> VZVirtualMachine {
-        Logger.info("create linux vm, name=\(dir.name)")
+        Logger.info("create macOS vm, name=\(dir.name)")
         let vzConfig = try createVirtualMachineConfiguration(config)
         try vzConfig.validate()
         return VZVirtualMachine(configuration: vzConfig)
@@ -18,19 +17,20 @@ struct Linux {
 
     func createVirtualMachineConfiguration(_ config: VMConfig) throws -> VZVirtualMachineConfiguration {
         let vzConfig = VZVirtualMachineConfiguration()
-
-        vzConfig.bootLoader = createBootLoader()
-
         vzConfig.cpuCount = config.cpu
         vzConfig.memorySize = config.memory
 
-        vzConfig.platform = VZGenericPlatformConfiguration()
+        vzConfig.bootLoader = VZMacOSBootLoader()
 
-        if gui {
-            vzConfig.graphicsDevices = [config.graphics()]
-            vzConfig.keyboards = [VZUSBKeyboardConfiguration()]
-            vzConfig.pointingDevices = [VZUSBScreenCoordinatePointingDeviceConfiguration()]
-        }
+        let platform = VZMacPlatformConfiguration()
+        platform.auxiliaryStorage = VZMacAuxiliaryStorage(url: dir.nvramPath.url)
+        platform.hardwareModel = VZMacHardwareModel(dataRepresentation: config.hardwareModel!)!
+        platform.machineIdentifier = VZMacMachineIdentifier(dataRepresentation: config.machineIdentifier!)!
+        vzConfig.platform = platform
+
+        vzConfig.graphicsDevices = [config.graphics()]
+        vzConfig.keyboards = [VZUSBKeyboardConfiguration()]
+        vzConfig.pointingDevices = [VZUSBScreenCoordinatePointingDeviceConfiguration()]
 
         vzConfig.networkDevices = [config.network()]
 
@@ -52,23 +52,10 @@ struct Linux {
         vzConfig.memoryBalloonDevices = [VZVirtioTraditionalMemoryBalloonDeviceConfiguration()]
         vzConfig.entropyDevices = [VZVirtioEntropyDeviceConfiguration()]
 
-        var sharing: [VZVirtioFileSystemDeviceConfiguration] = []
         if let directories = config.sharingDirectories() {
-            sharing += [directories]
+            vzConfig.directorySharingDevices = [directories]
         }
-        if let rosetta = config.rosetta, rosetta {
-            let device = VZVirtioFileSystemDeviceConfiguration(tag: "rosetta")
-            device.share = try VZLinuxRosettaDirectoryShare()
-            sharing += [device]
-        }
-        vzConfig.directorySharingDevices = sharing
 
         return vzConfig
-    }
-
-    private func createBootLoader() -> VZBootLoader {
-        let loader = VZEFIBootLoader()
-        loader.variableStore = VZEFIVariableStore(url: dir.nvramPath.url)
-        return loader
     }
 }

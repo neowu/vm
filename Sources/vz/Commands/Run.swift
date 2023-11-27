@@ -20,18 +20,10 @@ struct Run: AsyncParsableCommand {
     @Option(help: ArgumentHelp(visibility: .hidden))
     var logPath: Path?
 
-    @Flag(
-        help: ArgumentHelp(
-            "attach rosetta share to the linux guest",
-            discussion: """
-                refer to https://developer.apple.com/documentation/virtualization/running_intel_binaries_in_linux_vms_with_rosetta#3978496
-                """))
-    var rosetta: Bool = false
-
     func validate() throws {
         if detached {
             if gui || mount != nil {
-                throw ValidationError("-d must not use with --gui and --mount")
+                throw ValidationError("-d must not be used with --gui and --mount")
             }
             let logFile = Path("~/Library/Logs/vz.log")
             if logFile.exists() && !logFile.writable() {  // freopen() creates file if not exists
@@ -48,12 +40,14 @@ struct Run: AsyncParsableCommand {
         if let mount = mount, !mount.exists() {
             throw ValidationError("mount file not exits, mount=\(mount)")
         }
-        if rosetta && VZLinuxRosettaDirectoryShare.availability != .installed {
-            throw ValidationError("rosetta is not available on host")
-        }
         let config = try vmDir.loadConfig()
-        if rosetta && config.os != .linux {
-            throw ValidationError("rosetta must use with linux guest")
+        if let _ = config.rosetta {
+            if config.os != .linux {
+                throw ValidationError("rosetta must be used with linux guest")
+            }
+            if VZLinuxRosettaDirectoryShare.availability != .installed {
+                throw ValidationError("rosetta is not available on host")
+            }
         }
     }
 
@@ -83,7 +77,6 @@ struct Run: AsyncParsableCommand {
             var linux = Linux(vmDir)
             linux.gui = gui
             linux.mount = mount
-            linux.rosetta = rosetta
             virtualMachine = try linux.createVirtualMachine(config)
         } else {
             throw ExitCode.failure
@@ -111,11 +104,7 @@ struct Run: AsyncParsableCommand {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: Bundle.main.executablePath!)
         let logFile = Path("~/Library/Logs/vz.log")
-        var arguments = ["run", name, "--log-path", logFile.path]
-        if rosetta {
-            arguments.append("--rosetta")
-        }
-        task.arguments = arguments
+        task.arguments = ["run", name, "--log-path", logFile.path]
         task.launch()
         throw CleanExit.message("vm launched in background, check log in \(logFile)")
     }

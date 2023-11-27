@@ -14,6 +14,14 @@ struct VMConfig: Codable {
     var display: String = "1024x768"
     var sharing: [String: String] = [:]
 
+    // used by linux
+    // refer to https://developer.apple.com/documentation/virtualization/running_intel_binaries_in_linux_vms_with_rosetta#3978496
+    var rosetta: Bool?
+
+    // used by macOS
+    var machineIdentifier: Data?
+    var hardwareModel: Data?
+
     func network() -> VZVirtioNetworkDeviceConfiguration {
         let network = VZVirtioNetworkDeviceConfiguration()
         network.attachment = VZNATNetworkDeviceAttachment()
@@ -21,10 +29,16 @@ struct VMConfig: Codable {
         return network
     }
 
-    func sharingDirectories() -> [String: VZSharedDirectory] {
-        return sharing.mapValues({ value in
+    func sharingDirectories() -> VZVirtioFileSystemDeviceConfiguration? {
+        if sharing.isEmpty {
+            return nil
+        }
+        let directories = sharing.mapValues({ value in
             return VZSharedDirectory(url: Path(value).url, readOnly: false)
         })
+        let device = VZVirtioFileSystemDeviceConfiguration(tag: VZVirtioFileSystemDeviceConfiguration.macOSGuestAutomountTag)
+        device.share = VZMultipleDirectoryShare(directories: directories)
+        return device
     }
 
     func graphics() -> VZVirtioGraphicsDeviceConfiguration {

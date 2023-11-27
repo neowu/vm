@@ -5,7 +5,7 @@ struct IPSW: AsyncParsableCommand {
     static var configuration = CommandConfiguration(
         abstract: "get macOS restore image ipsw url",
         discussion: """
-            download ipsw file manually, then use in create command
+            download ipsw file manually, then use in create command with --ipsw
             """
     )
 
