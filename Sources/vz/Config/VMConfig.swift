@@ -22,6 +22,11 @@ struct VMConfig: Codable {
     var machineIdentifier: Data?
     var hardwareModel: Data?
 
+    var displayPixels: (Int, Int) {
+        let pixels = display.components(separatedBy: "x")
+        return (Int(pixels[0])!, Int(pixels[1])!)
+    }
+
     func network() -> VZVirtioNetworkDeviceConfiguration {
         let network = VZVirtioNetworkDeviceConfiguration()
         network.attachment = VZNATNetworkDeviceAttachment()
@@ -39,14 +44,5 @@ struct VMConfig: Codable {
         let device = VZVirtioFileSystemDeviceConfiguration(tag: VZVirtioFileSystemDeviceConfiguration.macOSGuestAutomountTag)
         device.share = VZMultipleDirectoryShare(directories: directories)
         return device
-    }
-
-    func graphics() -> VZVirtioGraphicsDeviceConfiguration {
-        let graphics = VZVirtioGraphicsDeviceConfiguration()
-        let pixels = display.components(separatedBy: "x")
-        graphics.scanouts = [
-            VZVirtioGraphicsScanoutConfiguration(widthInPixels: Int(pixels[0])!, heightInPixels: Int(pixels[1])!)
-        ]
-        return graphics
     }
 }

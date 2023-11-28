@@ -77,6 +77,7 @@ struct Create: AsyncParsableCommand {
         config.os = .macOS
         config.cpu = max(4, requirements.minimumSupportedCPUCount)
         config.memory = max(8 * 1024 * 1024 * 1024, requirements.minimumSupportedMemorySize)
+        config.display = "1920x1080"
         config.macAddress = VZMACAddress.randomLocallyAdministered().string
         config.hardwareModel = requirements.hardwareModel.dataRepresentation
         config.machineIdentifier = VZMacMachineIdentifier().dataRepresentation
@@ -84,29 +85,7 @@ struct Create: AsyncParsableCommand {
 
         let macOS = MacOS(dir)
         let virtualMachine = try macOS.createVirtualMachine(config)
-        try await installMacOS(virtualMachine)
-    }
-
-    @MainActor
-    private func installMacOS(_ virtualMachine: VZVirtualMachine) async throws {
-        var observers: [NSKeyValueObservation] = []  // must hold observer references during installation to print process
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            Task {
-                let installer = VZMacOSInstaller(virtualMachine: virtualMachine, restoringFromImageAt: ipsw!.url)
-                Logger.info("instal macOS")
-                let observer = installer.progress.observe(\.fractionCompleted, options: [.initial, .new]) { (progress, change) in
-                    Logger.info("instal progress: \(Int(change.newValue! * 100))%")
-                }
-                observers.append(observer)
-                installer.install { result in
-                    if case let .failure(error) = result {
-                        fatalError(error.localizedDescription)
-                    } else {
-                        continuation.resume()
-                    }
-                }
-            }
-        }
-        Logger.info("macOS install finished")
+        let installer = MacOSInstaller(virtualMachine, ipsw!)
+        try await installer.install()
     }
 }

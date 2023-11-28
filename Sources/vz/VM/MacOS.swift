@@ -28,7 +28,12 @@ struct MacOS {
         platform.machineIdentifier = VZMacMachineIdentifier(dataRepresentation: config.machineIdentifier!)!
         vzConfig.platform = platform
 
-        vzConfig.graphicsDevices = [config.graphics()]
+        let (width, height) = config.displayPixels
+        let display = VZMacGraphicsDeviceConfiguration()
+        display.displays = [
+            VZMacGraphicsDisplayConfiguration(for: NSScreen.main!, sizeInPoints: NSSize(width: width, height: height))
+        ]
+        vzConfig.graphicsDevices = [display]
         vzConfig.keyboards = [VZUSBKeyboardConfiguration()]
         vzConfig.pointingDevices = [VZUSBScreenCoordinatePointingDeviceConfiguration()]
 

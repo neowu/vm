@@ -27,7 +27,12 @@ struct Linux {
         vzConfig.platform = VZGenericPlatformConfiguration()
 
         if gui {
-            vzConfig.graphicsDevices = [config.graphics()]
+            let (width, height) = config.displayPixels
+            let display = VZVirtioGraphicsDeviceConfiguration()
+            display.scanouts = [
+                VZVirtioGraphicsScanoutConfiguration(widthInPixels: width, heightInPixels: height)
+            ]
+            vzConfig.graphicsDevices = [display]
             vzConfig.keyboards = [VZUSBKeyboardConfiguration()]
             vzConfig.pointingDevices = [VZUSBScreenCoordinatePointingDeviceConfiguration()]
         }

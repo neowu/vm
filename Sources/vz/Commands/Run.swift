@@ -79,7 +79,9 @@ struct Run: AsyncParsableCommand {
             linux.mount = mount
             virtualMachine = try linux.createVirtualMachine(config)
         } else {
-            throw ExitCode.failure
+            var macOS = MacOS(vmDir)
+            macOS.mount = mount
+            virtualMachine = try macOS.createVirtualMachine(config)
         }
 
         let vm = VM(virtualMachine)
@@ -93,8 +95,8 @@ struct Run: AsyncParsableCommand {
             vm.start()
         }
 
-        if gui {
-            runUI(vm)
+        if gui || config.os == .macOS {
+            runUI(vm, config.os)
         } else {
             runCLI()
         }
@@ -115,7 +117,7 @@ struct Run: AsyncParsableCommand {
         app.run()
     }
 
-    func runUI(_ vm: VM) {
+    func runUI(_ vm: VM, _ os: OS) {
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         app.activate(ignoringOtherApps: true)
@@ -139,7 +141,7 @@ struct Run: AsyncParsableCommand {
 
         let machineView = VZVirtualMachineView(frame: window.contentLayoutRect)
         machineView.capturesSystemKeys = true
-        machineView.automaticallyReconfiguresDisplay = false
+        machineView.automaticallyReconfiguresDisplay = os == .macOS
         machineView.virtualMachine = vm.machine
         machineView.autoresizingMask = [.width, .height]
 
