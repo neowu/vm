@@ -72,8 +72,8 @@ struct Run: AsyncParsableCommand {
         }
 
         if let logPath = logPath {
-            freopen(logPath.path, "w", stdout)
-            freopen(logPath.path, "w", stderr)
+            freopen(logPath.path, "a", stdout)
+            freopen(logPath.path, "a", stderr)
         }
 
         let virtualMachine: VZVirtualMachine
