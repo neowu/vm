@@ -18,11 +18,9 @@ struct Linux {
 
     func createVirtualMachineConfiguration(_ config: VMConfig) throws -> VZVirtualMachineConfiguration {
         let vzConfig = VZVirtualMachineConfiguration()
-
-        vzConfig.bootLoader = createBootLoader()
-
         vzConfig.cpuCount = config.cpu
         vzConfig.memorySize = config.memory
+        vzConfig.bootLoader = createBootLoader()
 
         vzConfig.platform = VZGenericPlatformConfiguration()
 

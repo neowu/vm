@@ -19,7 +19,6 @@ struct MacOS {
         let vzConfig = VZVirtualMachineConfiguration()
         vzConfig.cpuCount = config.cpu
         vzConfig.memorySize = config.memory
-
         vzConfig.bootLoader = VZMacOSBootLoader()
 
         let platform = VZMacPlatformConfiguration()
@@ -34,8 +33,8 @@ struct MacOS {
             VZMacGraphicsDisplayConfiguration(for: NSScreen.main!, sizeInPoints: NSSize(width: width, height: height))
         ]
         vzConfig.graphicsDevices = [display]
-        vzConfig.keyboards = [VZUSBKeyboardConfiguration()]
-        vzConfig.pointingDevices = [VZUSBScreenCoordinatePointingDeviceConfiguration()]
+        vzConfig.keyboards = [VZMacKeyboardConfiguration()]
+        vzConfig.pointingDevices = [VZMacTrackpadConfiguration()]
 
         vzConfig.networkDevices = [config.network()]
 

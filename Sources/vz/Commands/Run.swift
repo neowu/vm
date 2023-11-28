@@ -49,6 +49,10 @@ struct Run: AsyncParsableCommand {
                 throw ValidationError("rosetta is not available on host")
             }
         }
+        if config.os == .macOS && !gui {
+            // sonoma screen share high performance mode doesn't work with NAT, so better use vm view than standard mode
+            throw ValidationError("macOS must be used with gui")
+        }
     }
 
     @MainActor
@@ -95,8 +99,8 @@ struct Run: AsyncParsableCommand {
             vm.start()
         }
 
-        if gui || config.os == .macOS {
-            runUI(vm, config.os)
+        if gui {
+            runUI(vm, config.os == .macOS)
         } else {
             runCLI()
         }
@@ -117,7 +121,7 @@ struct Run: AsyncParsableCommand {
         app.run()
     }
 
-    func runUI(_ vm: VM, _ os: OS) {
+    func runUI(_ vm: VM, _ automaticallyReconfiguresDisplay: Bool) {
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         app.activate(ignoringOtherApps: true)
@@ -141,7 +145,7 @@ struct Run: AsyncParsableCommand {
 
         let machineView = VZVirtualMachineView(frame: window.contentLayoutRect)
         machineView.capturesSystemKeys = true
-        machineView.automaticallyReconfiguresDisplay = os == .macOS
+        machineView.automaticallyReconfiguresDisplay = automaticallyReconfiguresDisplay
         machineView.virtualMachine = vm.machine
         machineView.autoresizingMask = [.width, .height]
 
