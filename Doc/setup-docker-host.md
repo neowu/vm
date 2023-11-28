@@ -32,10 +32,11 @@ echo 'permit nopass :wheel' > /etc/doas.d/doas.conf
 ```
 
 # setup locally
+1. edit `/etc/hosts` to add alpine record
 ```sh
 ssh-copy-id alpine
 
-docker context update vz --docker host=ssh://[yourname]@alpine
+docker context create vz --docker host=ssh://[yourname]@alpine
 ```
 edit `~/.ssh/config` to add following (for multiplex ssh connection, e.g. VSCode devcontainer run multiple docker commands simultaneously)
 ```
