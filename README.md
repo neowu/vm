@@ -1,10 +1,10 @@
-virtual machine tool, for personal use. tested with Apple M2 CPU (MacBook Pro) / macOS Sonoma
+A lightweight virtual machine tool, for personal use. tested with Apple M2 CPU (MacBook Pro) / macOS Sonoma
 
-# features
+# Features
 * create and run both Linux and MacOS VM
 * run in GUI or detached mode
 
-# usage
+# Usage
 ```
 OVERVIEW: manage virtual machines
 
@@ -25,10 +25,11 @@ SUBCOMMANDS:
   See 'vz help <subcommand>' for detailed help.
 ```
 
-# install zsh completion
+# Install zsh completion
 ```sh
 vz --generate-completion-script zsh | sudo tee /usr/local/share/zsh/site-functions/_vz
 ```
 
-# notes
+# Notes
 * use `arp -an` to find ip, or check `cat /var/db/dhcpd_leases`
+* for local docker host, refer to [setup-docker-host.md](Doc/setup-docker-host.md)
