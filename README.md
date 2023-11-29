@@ -1,12 +1,5 @@
 A lightweight virtual machine tool, for personal use. tested with Apple M2 CPU (MacBook Pro) / macOS Sonoma
 
-# How to build
-install XCode for macOS SDK
-```sh
-sudo xcode-select -switch {where xcode installed}/Xcode.app/Contents/Developer
-./Scripts/debug.sh
-```
-
 # Features
 * create and run both Linux and MacOS VM
 * run in GUI or detached mode
@@ -32,9 +25,26 @@ SUBCOMMANDS:
   See 'vz help <subcommand>' for detailed help.
 ```
 
+# How to install
+download `vz.tar.gz` from [release page](https://github.com/neowu/vz/releases) and extract
+
+if you used browser to download instead of `wget`, you need to remove xattr to execute
+```sh
+xattr -r -d com.apple.quarantine vz
+xattr -r -d com.apple.provenance vz
+```
+
 # Install zsh completion
 ```sh
 vz --generate-completion-script zsh | sudo tee /usr/local/share/zsh/site-functions/_vz
+```
+
+# How to build
+install XCode for macOS SDK
+```sh
+sudo xcode-select -switch {where xcode installed}/Xcode.app/Contents/Developer
+
+./Scripts/debug.sh
 ```
 
 # Notes
