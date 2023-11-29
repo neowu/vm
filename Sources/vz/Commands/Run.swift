@@ -37,25 +37,27 @@ struct Run: AsyncParsableCommand {
         if vmDir.pid() != nil {
             throw ValidationError("vm is running, name=\(name)")
         }
-        if let mount = mount, !mount.exists() {
-            throw ValidationError("mount file not exits, mount=\(mount)")
-        }
         let config = try vmDir.loadConfig()
-        if let _ = config.rosetta {
-            if config.os != .linux {
-                throw ValidationError("rosetta must be used with linux guest")
-            }
-            if VZLinuxRosettaDirectoryShare.availability != .installed {
+        switch config.os {
+        case .linux:
+            if let _ = config.rosetta, VZLinuxRosettaDirectoryShare.availability != .installed {
                 throw ValidationError("rosetta is not available on host")
             }
-        }
-        if config.os == .macOS {
+            if let mount = mount, !mount.exists() {
+                throw ValidationError("mount file not exits, mount=\(mount)")
+            }
+        case .macOS:
             if !gui {
                 // sonoma screen share high performance mode doesn't work with NAT, so better use vm view than standard mode
                 throw ValidationError("macOS must be used with gui")
             }
             if mount != nil {
+                // macOS can only mount dmg files, created by https://support.apple.com/en-gb/guide/disk-utility/dskutl11888/mac
+                // not useful, can be substituted with shared folder
                 throw ValidationError("macOS does not support mount")
+            }
+            if let _ = config.rosetta {
+                throw ValidationError("macOS does not support rosetta")
             }
         }
     }

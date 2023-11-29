@@ -28,7 +28,7 @@ SUBCOMMANDS:
 # How to install
 download `vz.tar.gz` from [release page](https://github.com/neowu/vz/releases) and extract
 
-if you used browser to download instead of `wget`, you need to remove xattr to execute
+if you used browser to download instead of `wget`, you need to remove xattr
 ```sh
 xattr -r -d com.apple.quarantine vz
 xattr -r -d com.apple.provenance vz
