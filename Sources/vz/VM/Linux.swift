@@ -2,55 +2,38 @@ import Virtualization
 
 struct Linux {
     let dir: VMDirectory
+    let config: VMConfig
     var gui: Bool = false
     var mount: Path?
 
-    init(_ dir: VMDirectory) {
+    init(_ dir: VMDirectory, _ config: VMConfig) {
         self.dir = dir
+        self.config = config
     }
 
-    func createVirtualMachine(_ config: VMConfig) throws -> VZVirtualMachine {
+    func createVirtualMachine() throws -> VZVirtualMachine {
         Logger.info("create linux vm, name=\(dir.name)")
-        let vzConfig = try createVirtualMachineConfiguration(config)
+        let vzConfig = try createVirtualMachineConfiguration()
         try vzConfig.validate()
         return VZVirtualMachine(configuration: vzConfig)
     }
 
-    func createVirtualMachineConfiguration(_ config: VMConfig) throws -> VZVirtualMachineConfiguration {
+    func createVirtualMachineConfiguration() throws -> VZVirtualMachineConfiguration {
         let vzConfig = VZVirtualMachineConfiguration()
         vzConfig.cpuCount = config.cpu
         vzConfig.memorySize = config.memory
-        vzConfig.bootLoader = createBootLoader()
 
+        vzConfig.bootLoader = bootLoader()
         vzConfig.platform = VZGenericPlatformConfiguration()
 
         if gui {
-            let (width, height) = config.displayPixels
-            let display = VZVirtioGraphicsDeviceConfiguration()
-            display.scanouts = [
-                VZVirtioGraphicsScanoutConfiguration(widthInPixels: width, heightInPixels: height)
-            ]
-            vzConfig.graphicsDevices = [display]
+            vzConfig.graphicsDevices = [display()]
             vzConfig.keyboards = [VZUSBKeyboardConfiguration()]
             vzConfig.pointingDevices = [VZUSBScreenCoordinatePointingDeviceConfiguration()]
         }
 
         vzConfig.networkDevices = [config.network()]
-
-        var storage: [VZStorageDeviceConfiguration] = [
-            VZVirtioBlockDeviceConfiguration(
-                attachment: try VZDiskImageStorageDeviceAttachment(
-                    url: dir.diskPath.url,
-                    readOnly: false,
-                    cachingMode: VZDiskImageCachingMode.automatic,
-                    synchronizationMode: VZDiskImageSynchronizationMode.fsync))
-        ]
-        if let mount = mount {
-            storage.append(
-                VZUSBMassStorageDeviceConfiguration(
-                    attachment: try VZDiskImageStorageDeviceAttachment(url: mount.url, readOnly: true)))
-        }
-        vzConfig.storageDevices = storage
+        vzConfig.storageDevices = try storage()
 
         vzConfig.memoryBalloonDevices = [VZVirtioTraditionalMemoryBalloonDeviceConfiguration()]
         vzConfig.entropyDevices = [VZVirtioEntropyDeviceConfiguration()]
@@ -69,9 +52,35 @@ struct Linux {
         return vzConfig
     }
 
-    private func createBootLoader() -> VZBootLoader {
+    private func bootLoader() -> VZBootLoader {
         let loader = VZEFIBootLoader()
         loader.variableStore = VZEFIVariableStore(url: dir.nvramPath.url)
         return loader
+    }
+
+    private func display() -> VZGraphicsDeviceConfiguration {
+        let (width, height) = config.displayPixels
+        let display = VZVirtioGraphicsDeviceConfiguration()
+        display.scanouts = [
+            VZVirtioGraphicsScanoutConfiguration(widthInPixels: width, heightInPixels: height)
+        ]
+        return display
+    }
+
+    private func storage() throws -> [VZStorageDeviceConfiguration] {
+        let disk = VZVirtioBlockDeviceConfiguration(
+            attachment: try VZDiskImageStorageDeviceAttachment(
+                url: dir.diskPath.url,
+                readOnly: false,
+                cachingMode: VZDiskImageCachingMode.automatic,
+                synchronizationMode: VZDiskImageSynchronizationMode.fsync))
+
+        var storage: [VZStorageDeviceConfiguration] = [disk]
+        if let mount = mount {
+            storage.append(
+                VZUSBMassStorageDeviceConfiguration(
+                    attachment: try VZDiskImageStorageDeviceAttachment(url: mount.url, readOnly: true)))
+        }
+        return storage
     }
 }

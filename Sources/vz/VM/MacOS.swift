@@ -2,56 +2,34 @@ import Virtualization
 
 struct MacOS {
     let dir: VMDirectory
-    var mount: Path?
+    let config: VMConfig
 
-    init(_ dir: VMDirectory) {
+    init(_ dir: VMDirectory, _ config: VMConfig) {
         self.dir = dir
+        self.config = config
     }
 
-    func createVirtualMachine(_ config: VMConfig) throws -> VZVirtualMachine {
+    func createVirtualMachine() throws -> VZVirtualMachine {
         Logger.info("create macOS vm, name=\(dir.name)")
-        let vzConfig = try createVirtualMachineConfiguration(config)
+        let vzConfig = try createVirtualMachineConfiguration()
         try vzConfig.validate()
         return VZVirtualMachine(configuration: vzConfig)
     }
 
-    func createVirtualMachineConfiguration(_ config: VMConfig) throws -> VZVirtualMachineConfiguration {
+    func createVirtualMachineConfiguration() throws -> VZVirtualMachineConfiguration {
         let vzConfig = VZVirtualMachineConfiguration()
         vzConfig.cpuCount = config.cpu
         vzConfig.memorySize = config.memory
+
         vzConfig.bootLoader = VZMacOSBootLoader()
+        vzConfig.platform = platform()
 
-        let platform = VZMacPlatformConfiguration()
-        platform.auxiliaryStorage = VZMacAuxiliaryStorage(url: dir.nvramPath.url)
-        platform.hardwareModel = VZMacHardwareModel(dataRepresentation: config.hardwareModel!)!
-        platform.machineIdentifier = VZMacMachineIdentifier(dataRepresentation: config.machineIdentifier!)!
-        vzConfig.platform = platform
-
-        let (width, height) = config.displayPixels
-        let display = VZMacGraphicsDeviceConfiguration()
-        display.displays = [
-            VZMacGraphicsDisplayConfiguration(for: NSScreen.main!, sizeInPoints: NSSize(width: width, height: height))
-        ]
-        vzConfig.graphicsDevices = [display]
+        vzConfig.graphicsDevices = [display()]
         vzConfig.keyboards = [VZMacKeyboardConfiguration()]
         vzConfig.pointingDevices = [VZMacTrackpadConfiguration()]
 
+        vzConfig.storageDevices = [try disk()]
         vzConfig.networkDevices = [config.network()]
-
-        var storage: [VZStorageDeviceConfiguration] = [
-            VZVirtioBlockDeviceConfiguration(
-                attachment: try VZDiskImageStorageDeviceAttachment(
-                    url: dir.diskPath.url,
-                    readOnly: false,
-                    cachingMode: VZDiskImageCachingMode.automatic,
-                    synchronizationMode: VZDiskImageSynchronizationMode.fsync))
-        ]
-        if let mount = mount {
-            storage.append(
-                VZUSBMassStorageDeviceConfiguration(
-                    attachment: try VZDiskImageStorageDeviceAttachment(url: mount.url, readOnly: true)))
-        }
-        vzConfig.storageDevices = storage
 
         vzConfig.memoryBalloonDevices = [VZVirtioTraditionalMemoryBalloonDeviceConfiguration()]
         vzConfig.entropyDevices = [VZVirtioEntropyDeviceConfiguration()]
@@ -61,5 +39,31 @@ struct MacOS {
         }
 
         return vzConfig
+    }
+
+    private func platform() -> VZPlatformConfiguration {
+        let platform = VZMacPlatformConfiguration()
+        platform.auxiliaryStorage = VZMacAuxiliaryStorage(url: dir.nvramPath.url)
+        platform.hardwareModel = VZMacHardwareModel(dataRepresentation: config.hardwareModel!)!
+        platform.machineIdentifier = VZMacMachineIdentifier(dataRepresentation: config.machineIdentifier!)!
+        return platform
+    }
+
+    private func display() -> VZGraphicsDeviceConfiguration {
+        let (width, height) = config.displayPixels
+        let display = VZMacGraphicsDeviceConfiguration()
+        display.displays = [
+            VZMacGraphicsDisplayConfiguration(for: NSScreen.main!, sizeInPoints: NSSize(width: width, height: height))
+        ]
+        return display
+    }
+
+    private func disk() throws -> VZStorageDeviceConfiguration {
+        return VZVirtioBlockDeviceConfiguration(
+            attachment: try VZDiskImageStorageDeviceAttachment(
+                url: dir.diskPath.url,
+                readOnly: false,
+                cachingMode: VZDiskImageCachingMode.automatic,
+                synchronizationMode: VZDiskImageSynchronizationMode.fsync))
     }
 }

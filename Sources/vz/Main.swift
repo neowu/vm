@@ -6,7 +6,7 @@ struct Main: AsyncParsableCommand {
     static var configuration = CommandConfiguration(
         commandName: "vz",
         abstract: "manage virtual machines",
-        version: "0.3.0",
+        version: "0.4.0",
         subcommands: [
             Create.self,
             List.self,

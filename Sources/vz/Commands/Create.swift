@@ -83,8 +83,8 @@ struct Create: AsyncParsableCommand {
         config.machineIdentifier = VZMacMachineIdentifier().dataRepresentation
         try dir.saveConfig(config)
 
-        let macOS = MacOS(dir)
-        let virtualMachine = try macOS.createVirtualMachine(config)
+        let macOS = MacOS(dir, config)
+        let virtualMachine = try macOS.createVirtualMachine()
         let installer = MacOSInstaller(virtualMachine, ipsw!)
         try await installer.install()
     }

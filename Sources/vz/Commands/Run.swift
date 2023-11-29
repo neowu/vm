@@ -49,9 +49,14 @@ struct Run: AsyncParsableCommand {
                 throw ValidationError("rosetta is not available on host")
             }
         }
-        if config.os == .macOS && !gui {
-            // sonoma screen share high performance mode doesn't work with NAT, so better use vm view than standard mode
-            throw ValidationError("macOS must be used with gui")
+        if config.os == .macOS {
+            if !gui {
+                // sonoma screen share high performance mode doesn't work with NAT, so better use vm view than standard mode
+                throw ValidationError("macOS must be used with gui")
+            }
+            if mount != nil {
+                throw ValidationError("macOS does not support mount")
+            }
         }
     }
 
@@ -78,14 +83,13 @@ struct Run: AsyncParsableCommand {
 
         let virtualMachine: VZVirtualMachine
         if config.os == .linux {
-            var linux = Linux(vmDir)
+            var linux = Linux(vmDir, config)
             linux.gui = gui
             linux.mount = mount
-            virtualMachine = try linux.createVirtualMachine(config)
+            virtualMachine = try linux.createVirtualMachine()
         } else {
-            var macOS = MacOS(vmDir)
-            macOS.mount = mount
-            virtualMachine = try macOS.createVirtualMachine(config)
+            let macOS = MacOS(vmDir, config)
+            virtualMachine = try macOS.createVirtualMachine()
         }
 
         let vm = VM(virtualMachine)

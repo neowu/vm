@@ -1,5 +1,12 @@
 A lightweight virtual machine tool, for personal use. tested with Apple M2 CPU (MacBook Pro) / macOS Sonoma
 
+# How to build
+install XCode for macOS SDK
+```sh
+sudo xcode-select -switch {where xcode installed}/Xcode.app/Contents/Developer
+./Scripts/debug.sh
+```
+
 # Features
 * create and run both Linux and MacOS VM
 * run in GUI or detached mode

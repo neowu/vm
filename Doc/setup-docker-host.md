@@ -1,5 +1,7 @@
 # DO NOT just copy and run, please check what's it's doing and adapt to your own setup
 
+alpine doesn't support rosetta, use debian instead if you need rosetta support
+
 # create alpine vm 
 1. download alpine virt iso `https://dl-cdn.alpinelinux.org/alpine/v3.18/releases/aarch64/alpine-virt-3.18.4-aarch64.iso`
 2. vz create alpine --disk-size=500
@@ -38,7 +40,7 @@ ssh-copy-id alpine
 
 docker context create vz --docker host=ssh://[yourname]@alpine
 ```
-edit `~/.ssh/config` to add following (for multiplex ssh connection, e.g. VSCode devcontainer run multiple docker commands simultaneously)
+edit `~/.ssh/config` to add following (for multiplex ssh connection, e.g. VSCode devcontainer runs multiple docker commands simultaneously)
 ```
 Host *
   IdentityFile ~/.ssh/id_ed25519
