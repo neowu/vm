@@ -1,4 +1,4 @@
-# DO NOT just copy and run, please check what's it's doing and adapt to your own setup
+# DO NOT just copy and run, please check what the script doing and adapt to your own setup
 
 alpine doesn't support rosetta, use debian instead if you need rosetta support
 
