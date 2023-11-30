@@ -62,7 +62,6 @@ struct Run: AsyncParsableCommand {
         }
     }
 
-    @MainActor
     func run() throws {
         let vmDir = Home.shared.vmDir(name)
         let config = try vmDir.loadConfig()
@@ -102,13 +101,13 @@ struct Run: AsyncParsableCommand {
         signals.append(handleSignal(SIGTERM, vm))
 
         Task {
-            vm.start()
+            await vm.start()
         }
 
         if gui {
             runUI(vm, config.os == .macOS)
         } else {
-            runCLI()
+            dispatchMain()
         }
     }
 
@@ -119,12 +118,6 @@ struct Run: AsyncParsableCommand {
         task.arguments = ["run", name, "--log-path", logFile.path]
         task.launch()
         throw CleanExit.message("vm launched in background, check log in \(logFile)")
-    }
-
-    func runCLI() {
-        let app = NSApplication.shared
-        app.setActivationPolicy(.prohibited)
-        app.run()
     }
 
     func runUI(_ vm: VM, _ automaticallyReconfiguresDisplay: Bool) {

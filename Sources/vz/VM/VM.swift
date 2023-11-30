@@ -67,7 +67,6 @@ class VM: NSObject, VZVirtualMachineDelegate, NSWindowDelegate {
         exit(EXIT_FAILURE)
     }
 
-    @MainActor
     func windowWillClose(_ notification: Notification) {
         Task {
             try await stop()
