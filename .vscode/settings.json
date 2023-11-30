@@ -24,6 +24,8 @@
         "IPSW",
         "IPSWURL",
         "nvram",
-        "Subview"
+        "Subview",
+        "Trackpad",
+        "Virtio"
     ]
 }

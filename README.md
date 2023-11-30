@@ -1,4 +1,6 @@
-A lightweight virtual machine tool, for personal use. tested with Apple M2 CPU (MacBook Pro) / macOS Sonoma
+A lightweight virtual machine tool, for personal use. 
+
+only support Apple Silicon and macOS Sonoma
 
 # Features
 * create and run both Linux and MacOS VM
