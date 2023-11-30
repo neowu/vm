@@ -30,14 +30,14 @@ struct Run: AsyncParsableCommand {
                 throw ValidationError("detach mode log file is not writable, file=\(logFile)")
             }
         }
-        let vmDir = Home.shared.vmDir(name)
-        if !vmDir.initialized() {
+        let dir = Home.shared.vmDir(name)
+        if !dir.initialized() {
             throw ValidationError("vm not initialized, name=\(name)")
         }
-        if vmDir.pid() != nil {
+        if dir.pid() != nil {
             throw ValidationError("vm is running, name=\(name)")
         }
-        let config = try vmDir.loadConfig()
+        let config = try dir.loadConfig()
         switch config.os {
         case .linux:
             if let _ = config.rosetta, VZLinuxRosettaDirectoryShare.availability != .installed {
@@ -63,11 +63,11 @@ struct Run: AsyncParsableCommand {
     }
 
     func run() throws {
-        let vmDir = Home.shared.vmDir(name)
-        let config = try vmDir.loadConfig()
+        let dir = Home.shared.vmDir(name)
+        let config = try dir.loadConfig()
 
         // must hold lock reference, otherwise fd will de deallocated, and release all locks
-        let lock = vmDir.lock()
+        let lock = dir.lock()
         if lock == nil {
             Logger.error("vm is already running, name=\(name)")
             throw ExitCode.failure
@@ -82,17 +82,7 @@ struct Run: AsyncParsableCommand {
             freopen(logPath.path, "a", stderr)
         }
 
-        let virtualMachine: VZVirtualMachine
-        if config.os == .linux {
-            var linux = Linux(vmDir, config)
-            linux.gui = gui
-            linux.mount = mount
-            virtualMachine = try linux.createVirtualMachine()
-        } else {
-            let macOS = MacOS(vmDir, config)
-            virtualMachine = try macOS.createVirtualMachine()
-        }
-
+        let virtualMachine: VZVirtualMachine = try createVirtualMachine(dir, config)
         let vm = VM(virtualMachine)
 
         // must hold signals reference, otherwise it will de deallocated
@@ -111,7 +101,19 @@ struct Run: AsyncParsableCommand {
         }
     }
 
-    func runInBackground() throws {
+    private func createVirtualMachine(_ dir: VMDirectory, _ config: VMConfig) throws -> VZVirtualMachine {
+        if config.os == .linux {
+            var linux = Linux(dir, config)
+            linux.gui = gui
+            linux.mount = mount
+            return try linux.createVirtualMachine()
+        } else {
+            let macOS = MacOS(dir, config)
+            return try macOS.createVirtualMachine()
+        }
+    }
+
+    private func runInBackground() throws {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: Bundle.main.executablePath!)
         let logFile = Path("~/Library/Logs/vz.log")
@@ -120,7 +122,7 @@ struct Run: AsyncParsableCommand {
         throw CleanExit.message("vm launched in background, check log in \(logFile)")
     }
 
-    func runUI(_ vm: VM, _ automaticallyReconfiguresDisplay: Bool) {
+    private func runUI(_ vm: VM, _ automaticallyReconfiguresDisplay: Bool) {
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
         app.activate(ignoringOtherApps: true)
@@ -154,7 +156,7 @@ struct Run: AsyncParsableCommand {
         app.run()
     }
 
-    func handleSignal(_ sig: Int32, _ vm: VM) -> DispatchSourceSignal {
+    private func handleSignal(_ sig: Int32, _ vm: VM) -> DispatchSourceSignal {
         signal(sig, SIG_IGN)
         let signal = DispatchSource.makeSignalSource(signal: sig)
         signal.setEventHandler {

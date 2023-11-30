@@ -18,7 +18,7 @@ struct Linux {
         return VZVirtualMachine(configuration: vzConfig)
     }
 
-    func createVirtualMachineConfiguration() throws -> VZVirtualMachineConfiguration {
+    private func createVirtualMachineConfiguration() throws -> VZVirtualMachineConfiguration {
         let vzConfig = VZVirtualMachineConfiguration()
         vzConfig.cpuCount = config.cpu
         vzConfig.memorySize = config.memory

@@ -1,8 +1,8 @@
 import Foundation
 
 struct Logger {
-    static let pid = getpid()
-    static let formatter = {
+    private static let pid = getpid()
+    private static let formatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
         return formatter

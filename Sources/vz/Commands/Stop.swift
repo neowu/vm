@@ -9,30 +9,30 @@ struct Stop: AsyncParsableCommand {
     var name: String
 
     func validate() throws {
-        let vmDir = Home.shared.vmDir(name)
-        if !vmDir.initialized() {
+        let dir = Home.shared.vmDir(name)
+        if !dir.initialized() {
             throw ValidationError("vm not initialized, name=\(name)")
         }
-        if vmDir.pid() == nil {
+        if dir.pid() == nil {
             throw ValidationError("vm is not running, name=\(name)")
         }
     }
 
     func run() async throws {
-        let vmDir = Home.shared.vmDir(name)
-        let pid = vmDir.pid()
+        let dir = Home.shared.vmDir(name)
+        let pid = dir.pid()
         if let pid = pid {
             Logger.info("stop vm, name=\(name), pid=\(pid)")
             kill(pid, SIGINT)
         }
-        try await waitUntilStopped(vmDir)
+        try await waitUntilStopped(dir)
     }
 
-    private func waitUntilStopped(_ vmDir: VMDirectory) async throws {
+    private func waitUntilStopped(_ dir: VMDirectory) async throws {
         var attempts = 0
         while attempts < 20 {
             try await Task.sleep(nanoseconds: 1_000_000_000)
-            if vmDir.pid() == nil {
+            if dir.pid() == nil {
                 throw CleanExit.message("vm stopped")
             }
             attempts = attempts + 1

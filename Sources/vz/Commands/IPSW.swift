@@ -14,7 +14,7 @@ struct IPSW: AsyncParsableCommand {
         print(url.absoluteURL)
     }
 
-    func latestIPSWURL() async throws -> URL {
+    private func latestIPSWURL() async throws -> URL {
         let image = try await withCheckedThrowingContinuation { continuation in
             VZMacOSRestoreImage.fetchLatestSupported { result in
                 continuation.resume(with: result)

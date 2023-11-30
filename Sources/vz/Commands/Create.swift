@@ -33,9 +33,9 @@ struct Create: AsyncParsableCommand {
 
         switch os {
         case .linux:
-            try createLinuxVM(tempDir)
+            try createLinux(tempDir)
         case .macOS:
-            try await createMacOSVM(tempDir)
+            try await createMacOS(tempDir)
         }
 
         let vmDir = Home.shared.vmDir(name)
@@ -45,7 +45,7 @@ struct Create: AsyncParsableCommand {
         Logger.info("vm created, name=\(name), config=\(vmDir.configPath)")
     }
 
-    private func createLinuxVM(_ tempDir: VMDirectory) throws {
+    private func createLinux(_ tempDir: VMDirectory) throws {
         Logger.info("create nvram.bin")
         _ = try VZEFIVariableStore(creatingVariableStoreAt: tempDir.nvramPath.url)
 
@@ -58,7 +58,7 @@ struct Create: AsyncParsableCommand {
         try tempDir.saveConfig(config)
     }
 
-    private func createMacOSVM(_ dir: VMDirectory) async throws {
+    private func createMacOS(_ dir: VMDirectory) async throws {
         let image = try await withCheckedThrowingContinuation { continuation in
             VZMacOSRestoreImage.load(from: ipsw!.url) { result in
                 continuation.resume(with: result)
