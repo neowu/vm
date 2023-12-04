@@ -95,7 +95,8 @@ struct Run: AsyncParsableCommand {
         }
 
         if gui {
-            runUI(vm, config.os == .macOS)
+            let automaticallyReconfiguresDisplay = config.os == .macOS
+            runUI(vm, automaticallyReconfiguresDisplay)
         } else {
             dispatchMain()
         }
