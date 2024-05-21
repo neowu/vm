@@ -21,11 +21,15 @@
     "peacock.color": "#B48EAD",
     "cSpell.words": [
         "autoresizing",
+        "freopen",
         "IPSW",
         "IPSWURL",
         "nvram",
+        "sonoma",
         "Subview",
         "Trackpad",
         "Virtio"
-    ]
+    ],
+    "lldb.library": "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Versions/A/LLDB",
+    "lldb.launch.expressions": "native"
 }

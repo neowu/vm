@@ -1,4 +1,4 @@
-// swift-tools-version:5.9
+// swift-tools-version:5.10
 
 import PackageDescription
 
@@ -11,8 +11,8 @@ let package = Package(
         .executable(name: "vz", targets: ["vz"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.3"),
-        .package(url: "https://github.com/apple/swift-format.git", branch: ("release/5.9")),
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.1"),
+        .package(url: "https://github.com/apple/swift-format.git", branch: ("release/5.10")),
     ],
     targets: [
         .executableTarget(
