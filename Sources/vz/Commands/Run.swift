@@ -66,7 +66,7 @@ struct Run: AsyncParsableCommand {
         let dir = Home.shared.vmDir(name)
         let config = try dir.loadConfig()
 
-        // must hold lock reference, otherwise fd will de deallocated, and release all locks
+        // must hold lock reference, otherwise fd will be deallocated, and release all locks
         let lock = dir.lock()
         if lock == nil {
             Logger.error("vm is already running, name=\(name)")
@@ -126,7 +126,6 @@ struct Run: AsyncParsableCommand {
     private func runUI(_ vm: VM, _ automaticallyReconfiguresDisplay: Bool) {
         let app = NSApplication.shared
         app.setActivationPolicy(.regular)
-        app.activate(ignoringOtherApps: true)
 
         let window = NSWindow(
             contentRect: NSMakeRect(0, 0, 1024, 768),
@@ -136,13 +135,13 @@ struct Run: AsyncParsableCommand {
 
         let menu = NSMenu()
         let menuItem = NSMenuItem()
-        menuItem.submenu = NSMenu()
-        menuItem.submenu?.items = [
+        let subMenu = NSMenu()
+        subMenu.addItem(
             NSMenuItem(
                 title: "Stop \(name)...",
-                action: #selector(NSWindow.close), keyEquivalent: "q")
-        ]
-        menu.items = [menuItem]
+                action: #selector(NSWindow.close), keyEquivalent: "q"))
+        menuItem.submenu = subMenu
+        menu.addItem(menuItem)
         app.mainMenu = menu
 
         let machineView = VZVirtualMachineView(frame: window.contentLayoutRect)
