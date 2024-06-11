@@ -17,9 +17,6 @@ struct Run: AsyncParsableCommand {
     @Option(help: "attach disk image in read only mode, e.g. --mount=\"debian.iso\"", completion: .file())
     var mount: Path?
 
-    @Option(help: ArgumentHelp(visibility: .hidden))
-    var logPath: Path?
-
     func validate() throws {
         if detached {
             if gui || mount != nil {
@@ -77,11 +74,6 @@ struct Run: AsyncParsableCommand {
             try runInBackground()
         }
 
-        if let logPath = logPath {
-            freopen(logPath.path, "a", stdout)
-            freopen(logPath.path, "a", stderr)
-        }
-
         let virtualMachine: VZVirtualMachine = try createVirtualMachine(dir, config)
         let vm = VM(virtualMachine)
 
@@ -118,7 +110,9 @@ struct Run: AsyncParsableCommand {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: Bundle.main.executablePath!)
         let logFile = Path("~/Library/Logs/vz.log")
-        task.arguments = ["run", name, "--log-path", logFile.path]
+        task.arguments = ["run", name]
+        task.standardOutput = FileHandle(forWritingAtPath: logFile.path)
+        task.standardError = FileHandle(forWritingAtPath: logFile.path)
         task.launch()
         throw CleanExit.message("vm launched in background, check log in \(logFile)")
     }
